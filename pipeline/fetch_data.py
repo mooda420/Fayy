@@ -43,6 +43,11 @@ def load_buildings():
         gdf["raw_height"] = gdf.get("height")
         gdf["raw_floors"] = gdf.get("num_floors")
         gdf["bid"] = gdf["id"].astype(str)
+        gdf = gdf.reset_index(drop=True)
+        try:
+            gdf = fill_from_osm(gdf)
+        except Exception as exc:  # noqa: BLE001
+            print(f"OSM height fill skipped: {exc}")
     except Exception as exc:  # noqa: BLE001
         print(f"Overture failed ({exc}); falling back to OSM buildings")
         source = "osm"
@@ -64,6 +69,45 @@ def _primary_name(names):
     if isinstance(names, dict):
         return names.get("primary")
     return None
+
+
+def osm_buildings():
+    w, s, e, n = BBOX
+    osm = ox.features_from_bbox(bbox=(w, s, e, n), tags={"building": True}).reset_index()
+    osm = osm[osm.geometry.geom_type.isin(["Polygon", "MultiPolygon"])].copy()
+    osm["raw_height"] = osm["height"] if "height" in osm else None
+    osm["raw_floors"] = osm["building:levels"] if "building:levels" in osm else None
+    osm["bid"] = osm["element"].astype(str) + "/" + osm["id"].astype(str)
+    return osm
+
+
+def fill_from_osm(gdf):
+    """Fill Overture buildings lacking height/floors from the best-overlapping OSM building."""
+    osm = osm_buildings()
+    osm = osm[osm["raw_height"].apply(_num).notna() | osm["raw_floors"].apply(_num).notna()]
+    if osm.empty:
+        return gdf
+    a = gdf.to_crs(METRIC_CRS)
+    b = osm[["raw_height", "raw_floors", "geometry"]].to_crs(METRIC_CRS).reset_index(drop=True)
+    gdf["raw_height"] = gdf["raw_height"].astype(object)
+    gdf["raw_floors"] = gdf["raw_floors"].astype(object)
+    missing = a["raw_height"].apply(_num).isna() & a["raw_floors"].apply(_num).isna()
+    tree = b.sindex
+    filled = 0
+    for i in a.index[missing]:
+        g = a.geometry[i]
+        best, best_share = None, 0.5
+        for j in tree.query(g, predicate="intersects"):
+            share = g.intersection(b.geometry[j]).area / max(g.area, 1e-9)
+            if share > best_share:
+                best, best_share = j, share
+        if best is not None:
+            gdf.at[i, "raw_height"] = b.at[best, "raw_height"]
+            gdf.at[i, "raw_floors"] = b.at[best, "raw_floors"]
+            filled += 1
+    print(f"filled {filled} Overture buildings with OSM height/levels")
+    gdf.attrs["osm_filled"] = filled
+    return gdf
 
 
 def load_overrides():
@@ -98,6 +142,7 @@ def assign_heights(gdf):
 
 def fetch_buildings():
     gdf, source = load_buildings()
+    osm_filled = gdf.attrs.get("osm_filled", 0)
     gdf = assign_heights(gdf)
     gdf = gdf[["bid", "name", "height", "height_source", "geometry"]].to_crs(METRIC_CRS)
     gdf = gdf[gdf.geometry.area > 4].reset_index(drop=True)
@@ -110,6 +155,7 @@ def fetch_buildings():
         "from_floors": int(counts.get("floors", 0)),
         "from_override": int(counts.get("override", 0)),
         "defaulted": int(counts.get("default", 0)),
+        "osm_filled": int(osm_filled),
     }
     stats["real_pct"] = round(100 * (n - stats["defaulted"]) / max(n, 1), 1)
     print("Height coverage:", json.dumps(stats))
@@ -119,12 +165,14 @@ def fetch_buildings():
 
 def fetch_graphs():
     w, s, e, n = BBOX
-    moto = ox.graph_from_bbox(bbox=(w, s, e, n), network_type="drive", simplify=True)
+    moto = ox.graph_from_bbox(bbox=(w, s, e, n), network_type="drive_service", simplify=True)
+    moto = ox.truncate.largest_component(moto, strongly=True)
     moto = ox.add_edge_speeds(moto, fallback=MOTO_FALLBACK_KPH)
     for _, _, d in moto.edges(data=True):
         d["speed_kph"] = min(float(d["speed_kph"]), MOTO_CAP_KPH)
     moto = ox.add_edge_travel_times(moto)
     walk = ox.graph_from_bbox(bbox=(w, s, e, n), network_type="walk", simplify=True)
+    walk = ox.truncate.largest_component(walk, strongly=False)
     for _, _, d in walk.edges(data=True):
         d["travel_time"] = d["length"] / WALK_SPEED_MS
     moto_p = ox.project_graph(moto, to_crs=METRIC_CRS)
