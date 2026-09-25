@@ -94,11 +94,22 @@ function dijkstra(g, src, dst, k, si) {
 
 /* ---------- map ---------- */
 function initMap() {
-  map = new maplibregl.Map({
+  try { map = makeMap(); } catch (err) {
+    document.getElementById("map").innerHTML = '<div class="nogl">This demo needs WebGL. Please enable hardware acceleration in your browser settings, or try Chrome/Edge/Firefox.</div>';
+    console.error(err); return;
+  }
+  setupMap();
+}
+
+function makeMap() {
+  return new maplibregl.Map({
     container: "map", style: "https://tiles.openfreemap.org/styles/dark",
     center: [55.1395, 25.0815], zoom: 14.6, pitch: 55, bearing: -30, antialias: true,
     attributionControl: { customAttribution: "Map data © OpenStreetMap contributors, Overture Maps Foundation" },
   });
+}
+
+function setupMap() {
   map.addControl(new maplibregl.NavigationControl(), "top-right");
   map.on("load", async () => {
     const empty = { type: "FeatureCollection", features: [] };

@@ -40,3 +40,4 @@ input[type=range]{flex:1;accent-color:var(--cyan)}
 footer{font-size:11px;color:var(--mut);border-top:1px solid var(--line);padding-top:8px;margin-top:10px}
 [dir=rtl] #panel{direction:rtl;text-align:right}
 @media (max-width:700px){#panel{top:auto;left:8px;right:8px;width:auto;height:52%}}
+.nogl{position:absolute;top:40%;left:380px;right:40px;color:#fed7aa;font-size:16px}
