@@ -2,9 +2,9 @@
 const D = "data/";
 const FUEL_L_PER_100KM = 3.0, FUEL_PRICE_AED_PER_L = 2.8;
 const PRESETS = [
-  { name: "Gate Towers → North Reem (Bilshu'oum St) · 08:00 · 2.9 km", a: [54.4098, 24.4923], b: [54.3999, 24.5078], slot: 4 },
-  { name: "North Reem → Marina Square · 16:00 · 3.5 km", a: [54.4064, 24.5100], b: [54.3972, 24.4872], slot: 20 },
-  { name: "East Reem → Al Maryah Island · 16:00 · 4.1 km", a: [54.4122, 24.5051], b: [54.3899, 24.5015], slot: 20 },
+  { name: "North Al Maryah → Al Zahiyah · 16:00 · 3.4 km", a: [54.3928, 24.5039], b: [54.3793, 24.4905], slot: 20 },
+  { name: "South Al Maryah → Wadi Dalam St, Reem · 07:30 · 3.0 km", a: [54.3821, 24.4975], b: [54.3941, 24.4887], slot: 3 },
+  { name: "Al Maryah St, Reem → North Al Maryah · 18:00 · 4.3 km", a: [54.3966, 24.4988], b: [54.3902, 24.5037], slot: 24 },
 ];
 const I18N = {
   en: {},
@@ -131,7 +131,7 @@ function setupMap() {
     map.addLayer({ id: "pts-l", type: "symbol", source: "pts", layout: { "text-field": ["get", "l"], "text-size": 12, "text-font": ["Noto Sans Bold"], "text-allow-overlap": true }, paint: { "text-color": "#fff" } });
     map.on("click", onMapClick);
     await refresh();
-    runPreset(0, { ...PRESETS[0], slot: 20 });
+    runPreset(0);
   });
 }
 
