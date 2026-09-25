@@ -9,6 +9,7 @@ import osmnx as ox
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import fetch_data  # noqa: E402
+import fleet  # noqa: E402
 from config import (BBOX, DATE_LABELS, DATE_PRESETS, INTERIM, METRIC_CRS, OUT,  # noqa: E402
                     SLOTS)
 from export import write_geojson, write_graph, write_meta, write_shadow  # noqa: E402
@@ -51,6 +52,7 @@ def main():
     write_meta({"bbox": BBOX, "slots": SLOTS,
                 "dates": [{"key": k, "label": DATE_LABELS[k], "iso": d.isoformat()} for k, d in DATE_PRESETS.items()],
                 "index": slots_meta})
+    fleet.main()
     print(f"done in {time.time() - t0:.0f}s")
 
 

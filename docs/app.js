@@ -19,8 +19,8 @@ const I18N = {
     wait: "◆ B کے قریب سایہ دار انتظار کی جگہیں" },
 };
 
-const S = { mode: "moto", date: 0, slot: 20, k: 3, A: null, B: null, lang: "en", playing: null };
-let meta, stats, graphs = {}, shadowCache = {}, map, heatNow = null;
+const S = { mode: "moto", date: 0, slot: 20, k: 3, A: null, B: null, lang: "en", playing: null, tab: "route" };
+let meta, stats, fleet = null, graphs = {}, shadowCache = {}, map, heatNow = null;
 
 const $ = (id) => document.getElementById(id);
 const fmtSlot = (s) => `${s.slice(0, 2)}:${s.slice(2)}`;
@@ -115,11 +115,18 @@ function setupMap() {
     const empty = { type: "FeatureCollection", features: [] };
     map.addSource("shadows", { type: "geojson", data: empty });
     map.addSource("buildings", { type: "geojson", data: `${D}buildings.geojson` });
-    ["route-short", "route-fayy", "pts", "wait"].forEach((s) => map.addSource(s, { type: "geojson", data: empty }));
+    ["route-short", "route-fayy", "pts", "wait", "canopy"].forEach((s) => map.addSource(s, { type: "geojson", data: empty }));
     map.addLayer({ id: "shadows", type: "fill", source: "shadows", paint: { "fill-color": "#1e293b", "fill-opacity": 0.55 } });
     map.addLayer({ id: "bld", type: "fill-extrusion", source: "buildings", paint: {
       "fill-extrusion-color": ["interpolate", ["linear"], ["get", "height"], 0, "#f8fafc", 100, "#e2e8f0", 300, "#cbd5e1"],
       "fill-extrusion-height": ["get", "height"], "fill-extrusion-opacity": 0.9 } });
+    map.addLayer({ id: "canopy-glow", type: "line", source: "canopy", layout: { visibility: "none", "line-cap": "round" },
+      paint: { "line-color": "#ef4444", "line-width": 18, "line-opacity": 0.35, "line-blur": 8 } });
+    map.addLayer({ id: "canopy", type: "line", source: "canopy", layout: { visibility: "none", "line-cap": "round" },
+      paint: { "line-color": "#dc2626", "line-width": 6 } });
+    map.addLayer({ id: "canopy-n", type: "symbol", source: "canopy", layout: { visibility: "none", "symbol-placement": "line-center",
+      "text-field": ["to-string", ["get", "n"]], "text-size": 13, "text-font": ["Noto Sans Bold"], "text-allow-overlap": true },
+      paint: { "text-color": "#fff", "text-halo-color": "#b91c1c", "text-halo-width": 3 } });
     map.addLayer({ id: "route-short", type: "line", source: "route-short", layout: { "line-cap": "round", "line-join": "round" },
       paint: { "line-color": "#ea580c", "line-width": 4, "line-dasharray": [1.5, 1.5] } });
     map.addLayer({ id: "route-fayy-glow", type: "line", source: "route-fayy", paint: { "line-color": "#06b6d4", "line-width": 12, "line-opacity": 0.3, "line-blur": 4 } });
@@ -150,8 +157,8 @@ function onMapClick(e) {
   route();
 }
 
-function runPreset(i) {
-  const p = PRESETS[i];
+function runPreset(i, trip) {
+  const p = trip || PRESETS[i];
   S.A = p.a; S.B = p.b;
   if (p.slot != null) { S.slot = p.slot; $("slider").value = S.slot; }
   const pad = window.innerWidth > 700 ? { top: 120, bottom: 120, left: 420, right: 120 } : 60;
@@ -212,6 +219,75 @@ async function route() {
   $("result").classList.remove("hidden");
   showWaitingSpots(dst, si);
   heatDose(g);
+}
+
+/* ---------- tabs: rider shift + shade planner ---------- */
+function setTab(tab) {
+  S.tab = tab;
+  setSeg("tabs", tab);
+  ["route", "shift", "canopy"].forEach((k) => $(`tab-${k}`).classList.toggle("hidden", k !== tab));
+  const vis = tab === "canopy" ? "visible" : "none";
+  ["canopy-glow", "canopy", "canopy-n"].forEach((l) => map && map.getLayer(l) && map.setLayoutProperty(l, "visibility", vis));
+  const routeVis = tab === "canopy" ? "none" : "visible";
+  ["route-short", "route-fayy-glow", "route-fayy", "wait", "pts", "pts-l"].forEach((l) => map && map.getLayer(l) && map.setLayoutProperty(l, "visibility", routeVis));
+  if (tab === "shift") renderShift();
+  if (tab === "canopy") renderCanopy();
+}
+
+async function renderShift() {
+  if (!fleet) return;
+  const g = await loadGraph("moto");
+  $("shiftDate").textContent = `Date: ${meta.dates[S.date].label}.`;
+  const rows = fleet.shift.map((d) => {
+    const si = S.date * meta.slots.length + meta.slots.indexOf(d.slot);
+    const r = fleet.restaurants[d.r], tw = fleet.towers[d.t];
+    const src = nearestNode(g, r[1], r[2]), dst = nearestNode(g, tw[1], tw[2]);
+    const sh = dijkstra(g, src, dst, 0, si), fy = dijkstra(g, src, dst, fleet.k, si);
+    return { d, r, tw, s: sh ? sh.sun / 60 : 0, f: fy ? fy.sun / 60 : 0 };
+  });
+  const ts = rows.reduce((a, x) => a + x.s, 0), tf = rows.reduce((a, x) => a + x.f, 0);
+  const pct = ts > 0 ? Math.round(100 * (1 - tf / ts)) : 0;
+  $("shiftHead").textContent = `This shift: ${(ts - tf).toFixed(1)} fewer minutes in direct sun (${pct}%)`;
+  $("shiftNote").classList.toggle("hidden", pct >= 10);
+  $("shiftS").textContent = `${ts.toFixed(1)} min`;
+  $("shiftF").textContent = `${tf.toFixed(1)} min`;
+  const W = 300, H = 150, L = 22, B = 18, T = 8, max = Math.max(1, ...rows.map((x) => x.s));
+  const gw = (W - L - 4) / rows.length, bw = gw * 0.38, y = (v) => H - B - (v / max) * (H - B - T);
+  let svg = "";
+  for (let v = 0; v <= max; v += max > 4 ? 2 : 1) svg += `<line x1="${L}" x2="${W - 2}" y1="${y(v)}" y2="${y(v)}" stroke="#e2e8f0"/><text x="${L - 3}" y="${y(v) + 3}" text-anchor="end">${v}</text>`;
+  rows.forEach((x, i) => {
+    const x0 = L + i * gw + gw * 0.1;
+    const tip = `#${i + 1} ${fmtSlot(x.d.slot)} ${x.r[0]} → ${x.tw[0]}: shortest ${x.s.toFixed(1)} min, Fayy ${x.f.toFixed(1)} min in sun`;
+    svg += `<g class="bar" data-i="${i}"><title>${tip}</title><rect x="${x0}" y="${y(x.s)}" width="${bw}" height="${y(0) - y(x.s)}" fill="#ea580c"/>`
+      + `<rect x="${x0 + bw}" y="${y(x.f)}" width="${bw}" height="${y(0) - y(x.f)}" fill="#0891b2"/><rect x="${x0}" y="${T}" width="${bw * 2}" height="${H - B - T}" fill="transparent"/></g>`;
+    if (i % 2 === 0) svg += `<text x="${x0 + bw}" y="${H - 5}" text-anchor="middle">${fmtSlot(x.d.slot)}</text>`;
+  });
+  $("shiftChart").innerHTML = svg;
+  $("shiftChart").onclick = (e) => {
+    const b = e.target.closest(".bar"); if (!b) return;
+    const x = rows[+b.dataset.i];
+    S.mode = "moto"; setSeg("mode", "moto"); S.k = fleet.k; setSeg("pref", S.k);
+    setTab("route");
+    runPreset(-1, { a: [x.r[1], x.r[2]], b: [x.tw[1], x.tw[2]], slot: meta.slots.indexOf(x.d.slot) });
+  };
+}
+
+function renderCanopy() {
+  if (!fleet) return;
+  const top = fleet.canopy[meta.dates[S.date].key] || [];
+  $("canopyDate").textContent = meta.dates[S.date].label;
+  map.getSource("canopy").setData({ type: "FeatureCollection", features: top.map((c, i) => ({ type: "Feature", properties: { n: i + 1 }, geometry: { type: "LineString", coordinates: c.coords } })) });
+  $("canopyList").innerHTML = top.map((c) => `<li><b>${c.minutes.toFixed(1)} rider-min</b> in sun · ${c.name || "Unnamed street"}<div class="muted">${c.length_m} m segment · on ${c.trips} Fayy trips</div></li>`).join("");
+  $("canopyList").onclick = (e) => {
+    const li = e.target.closest("li"); if (!li) return;
+    map.flyTo({ center: top[[...li.parentNode.children].indexOf(li)].mid, zoom: 16.5, duration: 900 });
+  };
+  if (top.length) {
+    const xs = top.flatMap((c) => c.coords);
+    const lo = xs.reduce((a, p) => [Math.min(a[0], p[0]), Math.min(a[1], p[1])], [180, 90]);
+    const hi = xs.reduce((a, p) => [Math.max(a[0], p[0]), Math.max(a[1], p[1])], [-180, -90]);
+    map.fitBounds([lo, hi], { padding: window.innerWidth > 700 ? { top: 80, bottom: 80, left: 400, right: 80 } : 40, duration: 800 });
+  }
 }
 
 /* Live heat from Open-Meteo (no key); the line stays hidden if the fetch fails. */
@@ -287,6 +363,8 @@ function togglePlay() {
 
 async function main() {
   [meta, stats] = await Promise.all([fetch(`${D}meta.json`).then((r) => r.json()), fetch(`${D}stats.json`).then((r) => r.json())]);
+  fetch(`${D}fleet.json`).then((r) => r.json()).then((f) => { fleet = f; })
+    .catch(() => document.querySelectorAll("#tabs [data-v=shift], #tabs [data-v=canopy]").forEach((b) => b.remove()));
   $("date").innerHTML = meta.dates.map((d, i) => `<button data-v="${i}" class="${i === 0 ? "on" : ""}">${d.label}</button>`).join("");
   $("slider").max = meta.slots.length - 1;
   $("slider").value = S.slot;
@@ -294,7 +372,8 @@ async function main() {
   $("stats").textContent = `Building heights (${stats.buildings}): ${stats.real} real (${stats.real_pct}%: ${stats.from_override} tower overrides, ${stats.with_height} measured, ${stats.from_floors} from floors) / ${stats.estimated} estimated from footprint / ${stats.defaulted} default 12 m.`;
   const seg = (id, fn) => { $(id).onclick = (e) => { const b = e.target.closest("button"); if (b) fn(b); }; };
   seg("mode", (b) => { S.mode = b.dataset.v; setSeg("mode", S.mode); refresh(); });
-  seg("date", (b) => { S.date = +b.dataset.v; setSeg("date", S.date); refresh(); });
+  seg("date", (b) => { S.date = +b.dataset.v; setSeg("date", S.date); refresh(); if (S.tab !== "route") setTab(S.tab); });
+  seg("tabs", (b) => setTab(b.dataset.v));
   seg("pref", (b) => { S.k = +b.dataset.v; setSeg("pref", S.k); route(); });
   seg("presets", (b) => runPreset(+b.dataset.i));
   seg("lang", (b) => { S.lang = b.dataset.lang; applyLang(); });

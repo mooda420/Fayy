@@ -42,3 +42,16 @@ footer{font-size:11px;color:var(--mut);border-top:1px solid var(--line);padding-
 @media (max-width:700px){#panel{top:auto;left:8px;right:8px;width:auto;height:52%}}
 .nogl{position:absolute;top:40%;left:380px;right:40px;color:#9a3412;font-size:16px}
 .heat{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:8px;padding:6px 10px;font-size:13px;margin-bottom:8px}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin:4px 0 12px}
+.tabs button{flex:1;border:0;background:transparent;color:var(--mut);padding:8px 4px;cursor:pointer;font:inherit;font-weight:600;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button.on{color:var(--cyan);border-bottom-color:var(--cyan)}
+.small{font-size:12px;margin:0 0 8px}
+.mt{margin-top:12px}
+.chart{width:100%;height:auto;display:block;background:var(--chip);border:1px solid var(--line);border-radius:8px}
+.chart .bar{cursor:pointer}.chart .bar:hover{opacity:.75}
+.chart text{font-size:8px;fill:var(--mut)}
+.canopy{margin:0;padding-left:20px}
+.canopy li{padding:6px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.canopy li:hover{background:var(--chip)}
+.canopy li b{color:#dc2626}
+.canopy li .muted{font-size:12px}
