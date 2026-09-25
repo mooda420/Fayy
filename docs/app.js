@@ -1,25 +1,25 @@
 /* Fayy — shade-aware routing, fully client-side. */
 const D = "data/";
 const PRESETS = [
-  { name: "City of Lights (Addax Tower) → Shams Boulevard", a: [54.4053, 24.4993], b: [54.4113, 24.4974] },
-  { name: "Sun & Sky Towers → Sorbonne University Abu Dhabi", a: [54.4063, 24.4974], b: [54.4103, 24.4902] },
-  { name: "Bilshu'oum St → Qirtas St (north Reem)", a: [54.4115, 24.5076], b: [54.4052, 24.5076] },
+  { name: "The Bridges (Shams) → Reem Central Park · 08:00", a: [54.4051, 24.5088], b: [54.4000, 24.4944], slot: 4 },
+  { name: "Reem Central Park → Al Maryah Island · 16:00", a: [54.3988, 24.4981], b: [54.3875, 24.4952], slot: 20 },
+  { name: "Sorbonne University → Najmat · 16:00", a: [54.4102, 24.4905], b: [54.4034, 24.4876], slot: 20 },
 ];
 const I18N = {
   en: {},
-  ar: { tagline: "الظل الذي يعود. مسارات مظللة في جزيرة الريم، أبوظبي.", mode: "الوضع", moto: "دراجة نارية", walk: "مشي", date: "التاريخ",
+  ar: { tagline: "الظل الذي يعود. مسارات مظللة في جزيرتي الريم والمارية، أبوظبي.", mode: "الوضع", moto: "دراجة نارية", walk: "مشي", date: "التاريخ",
     time: "الوقت", pref: "تفضيل الظل", fastest: "الأسرع", balanced: "متوازن", maxshade: "أقصى ظل", trips: "رحلات تجريبية",
     hint: "أو انقر على الخريطة لتحديد A ثم B.", shortest: "الأقصر", dose: "جرعة الحرارة: وردية من 10 توصيلات",
     banner: "لا يوجد ظل تقريبًا الآن: لهذا يوجد حظر العمل في الخارج وقت الظهيرة (12:30–15:00، 15 يونيو–15 سبتمبر).",
     wait: "◆ أماكن انتظار مظللة قرب B" },
-  ur: { tagline: "واپس آنے والا سایہ۔ جزیرہ الریم، ابوظہبی کے لیے سایہ دار راستے۔", mode: "طریقہ", moto: "موٹر سائیکل", walk: "پیدل", date: "تاریخ",
+  ur: { tagline: "واپس آنے والا سایہ۔ جزیرہ الریم اور المریہ، ابوظہبی کے لیے سایہ دار راستے۔", mode: "طریقہ", moto: "موٹر سائیکل", walk: "پیدل", date: "تاریخ",
     time: "وقت", pref: "سایہ کی ترجیح", fastest: "تیز ترین", balanced: "متوازن", maxshade: "زیادہ سایہ", trips: "ڈیمو سفر",
     hint: "یا نقشے پر کلک کر کے A پھر B منتخب کریں۔", shortest: "مختصر ترین", dose: "حرارت کی خوراک: 10 ڈیلیوریز کی شفٹ",
     banner: "اس وقت تقریباً کوئی سایہ نہیں: اسی لیے دوپہر میں باہر کام پر پابندی ہے (12:30–15:00، 15 جون–15 ستمبر)۔",
     wait: "◆ B کے قریب سایہ دار انتظار کی جگہیں" },
 };
 
-const S = { mode: "moto", date: 0, slot: 22, k: 3, A: null, B: null, lang: "en", playing: null };
+const S = { mode: "moto", date: 0, slot: 20, k: 3, A: null, B: null, lang: "en", playing: null };
 let meta, stats, graphs = {}, shadowCache = {}, map;
 
 const $ = (id) => document.getElementById(id);
@@ -104,7 +104,7 @@ function initMap() {
 function makeMap() {
   return new maplibregl.Map({
     container: "map", style: "https://tiles.openfreemap.org/styles/dark",
-    center: [54.4065, 24.4965], zoom: 14.8, pitch: 55, bearing: -30, antialias: true,
+    center: [54.399, 24.4955], zoom: 14.6, pitch: 55, bearing: -30, antialias: true,
     attributionControl: { customAttribution: "Map data © OpenStreetMap contributors, Overture Maps Foundation" },
   });
 }
@@ -150,7 +150,14 @@ function onMapClick(e) {
   route();
 }
 
-function runPreset(i) { S.A = PRESETS[i].a; S.B = PRESETS[i].b; route(); }
+function runPreset(i) {
+  const p = PRESETS[i];
+  S.A = p.a; S.B = p.b;
+  if (p.slot != null) { S.slot = p.slot; $("slider").value = S.slot; }
+  const pad = window.innerWidth > 700 ? { top: 120, bottom: 120, left: 420, right: 120 } : 60;
+  map.fitBounds([[Math.min(p.a[0], p.b[0]), Math.min(p.a[1], p.b[1])], [Math.max(p.a[0], p.b[0]), Math.max(p.a[1], p.b[1])]], { padding: pad, pitch: 55, bearing: -30, duration: 800 });
+  refresh();
+}
 
 /* ---------- UI ---------- */
 function setSeg(id, val) { document.querySelectorAll(`#${id} button`).forEach((b) => b.classList.toggle("on", b.dataset.v === String(val))); }
@@ -265,8 +272,7 @@ async function main() {
   $("slider").max = meta.slots.length - 1;
   $("slider").value = S.slot;
   $("presets").innerHTML = PRESETS.map((p, i) => `<button data-i="${i}">${p.name}</button>`).join("");
-  const real = stats.with_height + stats.from_floors + stats.from_override;
-  $("stats").textContent = `Building heights: ${real}/${stats.buildings} from data (${stats.real_pct}%): ${stats.with_height} measured, ${stats.from_floors} from floors, ${stats.from_override} manual; ${stats.defaulted} defaulted to 12 m.`;
+  $("stats").textContent = `Building heights (${stats.buildings}): ${stats.real} real (${stats.real_pct}%: ${stats.from_override} tower overrides, ${stats.with_height} measured, ${stats.from_floors} from floors) / ${stats.estimated} estimated from footprint / ${stats.defaulted} default 12 m.`;
   const seg = (id, fn) => { $(id).onclick = (e) => { const b = e.target.closest("button"); if (b) fn(b); }; };
   seg("mode", (b) => { S.mode = b.dataset.v; setSeg("mode", S.mode); refresh(); });
   seg("date", (b) => { S.date = +b.dataset.v; setSeg("date", S.date); refresh(); });

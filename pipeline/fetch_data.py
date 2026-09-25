@@ -10,7 +10,7 @@ import numpy as np
 import osmnx as ox
 
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
-from config import (BBOX, DEFAULT_HEIGHT_M, FLOOR_HEIGHT_M, INTERIM, METRIC_CRS,  # noqa: E402
+from config import (AREA_HEIGHT_RULES, BBOX, DEFAULT_HEIGHT_M, OVERRIDE_MATCH_M, OVERRIDE_MAX_AREA_M2, FLOOR_HEIGHT_M, INTERIM, METRIC_CRS,  # noqa: E402
                     MOTO_CAP_KPH, MOTO_FALLBACK_KPH, OUT, OVERRIDES, RAW, WALK_SPEED_MS)
 
 ox.settings.use_cache = True
@@ -116,28 +116,65 @@ def fill_from_osm(gdf):
 
 
 def load_overrides():
-    table = {}
+    """Return (name -> height, [(lon, lat, height)]) from the overrides CSV."""
+    by_name, by_point = {}, []
     if OVERRIDES.exists():
         with open(OVERRIDES, newline="", encoding="utf-8") as f:
             for row in csv.DictReader(f):
-                table[row["key"].strip().lower()] = float(row["height_m"])
-    return table
+                h = float(row["height_m"])
+                by_name[row["key"].strip().lower()] = h
+                if row.get("lat") and row.get("lon"):
+                    by_point.append((float(row["lon"]), float(row["lat"]), h))
+    return by_name, by_point
+
+
+def match_point_overrides(gdf, by_point):
+    """Map building index -> override height for overrides located by lon/lat."""
+    if not by_point:
+        return {}
+    metric = gdf.geometry.to_crs(METRIC_CRS)
+    areas = metric.area.to_numpy()
+    pts = gpd.GeoSeries(gpd.points_from_xy([p[0] for p in by_point], [p[1] for p in by_point]),
+                        crs=4326).to_crs(METRIC_CRS)
+    tree = metric.sindex
+    hits = {}
+    for pt, (_, _, h) in zip(pts, by_point):
+        cand = [i for i in tree.query(pt.buffer(OVERRIDE_MATCH_M)) if areas[i] <= OVERRIDE_MAX_AREA_M2]
+        if not cand:
+            continue
+        inside = [i for i in cand if metric.iloc[i].contains(pt)]
+        best = min(inside or cand, key=lambda i: metric.iloc[i].distance(pt))
+        if metric.iloc[best].distance(pt) <= OVERRIDE_MATCH_M:
+            hits[best] = h
+    return hits
+
+
+def area_height(area_m2):
+    for min_area, h in AREA_HEIGHT_RULES:
+        if area_m2 > min_area:
+            return h
+    return None
 
 
 def assign_heights(gdf):
-    overrides = load_overrides()
+    by_name, by_point = load_overrides()
+    point_hits = match_point_overrides(gdf, by_point)
+    areas = gdf.geometry.to_crs(METRIC_CRS).area.to_numpy()
     heights, sources = [], []
-    for _, r in gdf.iterrows():
+    for pos, (_, r) in enumerate(gdf.iterrows()):
         name = (r.get("name") or "")
-        key_hits = [overrides.get(str(r["bid"]).lower()), overrides.get(str(name).strip().lower())]
+        key_hits = [by_name.get(str(r["bid"]).lower()), by_name.get(str(name).strip().lower()), point_hits.get(pos)]
         ov = next((k for k in key_hits if k), None)
         h, f = _num(r.get("raw_height")), _num(r.get("raw_floors"))
+        est = area_height(areas[pos])
         if ov:
             heights.append(ov); sources.append("override")
         elif h:
             heights.append(h); sources.append("height")
         elif f:
             heights.append(f * FLOOR_HEIGHT_M); sources.append("floors")
+        elif est:
+            heights.append(est); sources.append("estimated")
         else:
             heights.append(DEFAULT_HEIGHT_M); sources.append("default")
     gdf["height"] = np.round(heights, 1)
@@ -159,10 +196,14 @@ def fetch_buildings():
         "with_height": int(counts.get("height", 0)),
         "from_floors": int(counts.get("floors", 0)),
         "from_override": int(counts.get("override", 0)),
+        "estimated": int(counts.get("estimated", 0)),
         "defaulted": int(counts.get("default", 0)),
         "osm_filled": int(osm_filled),
     }
-    stats["real_pct"] = round(100 * (n - stats["defaulted"]) / max(n, 1), 1)
+    stats["real"] = stats["with_height"] + stats["from_floors"] + stats["from_override"]
+    stats["real_pct"] = round(100 * stats["real"] / max(n, 1), 1)
+    stats["estimated_pct"] = round(100 * stats["estimated"] / max(n, 1), 1)
+    stats["default_pct"] = round(100 * stats["defaulted"] / max(n, 1), 1)
     print("Height coverage:", json.dumps(stats))
     gdf.to_file(INTERIM / "buildings.gpkg", driver="GPKG")
     return gdf, stats
