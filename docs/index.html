@@ -38,7 +38,7 @@
   </section>
 
   <section>
-    <label><span data-i18n="time">Time</span> <b id="timeLabel">--:--</b> <span id="sunLabel" class="muted"></span></label>
+    <label><span data-i18n="time">Time</span> <b id="timeLabel">16:00</b> <span id="sunLabel" class="muted"></span></label>
     <div class="row">
       <button id="play" class="play" title="Play the day">▶</button>
       <input type="range" id="slider" min="0" max="25" step="1" value="8">
@@ -79,15 +79,16 @@
   </section>
 
   <section id="dose" class="dose">
-    <label data-i18n="dose">Heat dose: sample 10-delivery shift</label>
+    <label data-i18n="dose">Heat dose: sample 18-delivery shift</label>
     <div id="doseOut" class="muted">—</div>
   </section>
   </div>
 
   <div id="tab-shift" class="hidden">
-    <p class="muted small">18 deliveries from 6 restaurants to 12 residential towers, 11:00–15:00, Motorcycle, Balanced shade. <span id="shiftDate"></span></p>
+    <div class="seg" id="shiftSel"><button data-v="afternoon" class="on">Afternoon shift</button><button data-v="midday">Midday shift</button></div>
+    <p class="muted small mt">18 deliveries from 6 restaurants to 12 residential towers, <span id="shiftHours">15:30–18:30</span>, Motorcycle, Balanced shade. <span id="shiftDate"></span></p>
     <div class="headline" id="shiftHead">—</div>
-    <div class="banner hidden" id="shiftNote">At midday the sun is almost overhead and about 90% of the streets are in direct sun, so re-routing alone saves little. This is the case for the midday work break and for building shade where it matters.</div>
+    <p class="muted small" id="shiftNote">At midday (12:30–15:00) ~90% of streets are in direct sun, so routing can't help much. That's why the midday work ban exists.</p>
     <table class="stbl" id="shiftTotals"></table>
     <div class="trade" id="shiftTrade"></div>
     <div class="muted small" id="shiftFuel"></div>

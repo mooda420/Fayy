@@ -21,10 +21,10 @@ Everything at demo time is static: HTML + vanilla JS + MapLibre GL JS + OpenFree
 - 3D extruded buildings + live shadow layer, time slider and ▶ Play (shadows sweep across the day and routes re-compute live).
 - Result card: travel time and minutes in direct sun for both routes + headline.
 - Midday banner when almost no shade exists (outdoor-work ban reminder, 12:30–15:00, 15 Jun–15 Sep).
-- Stretch goals done: ◆ shaded rider waiting spots within 150 m of B, EN / العربية / اردو toggle, heat-dose estimate for a 10-delivery shift.
+- Stretch goals done: ◆ shaded rider waiting spots within 150 m of B, EN / العربية / اردو toggle, heat-dose estimate for an 18-delivery shift.
 - **Distance**: every route shows time · km (summed from graph edge `length_m`) · minutes in direct sun.
 - **Live heat**: current temperature and feels-like temperature for the map centre from Open-Meteo (free, no key), shown in the result card with the minutes Fayy saves. The line is hidden if the fetch fails.
-- **Rider shift tab**: 18 seeded deliveries (6 restaurants → 12 residential towers, 11:00–15:00, Motorcycle, Balanced; schedule from `pipeline/fleet.py` → `docs/data/fleet.json`), routed live in the browser, with a per-delivery bar chart of sun minutes, time / km / sun totals for shortest vs Fayy, sun minutes avoided per extra km, and an extra-fuel estimate (3.0 L/100 km, AED 2.8/L). At midday the sun is almost overhead, so the saving is small (about 1% on 25 Sep), and the tab says so.
+- **Rider shift tab**: 18 seeded deliveries (6 restaurants → 12 residential towers, afternoon 15:30–18:30 by default with a Midday 11:00–15:00 toggle, same seed, Motorcycle, Balanced; schedule from `pipeline/fleet.py` → `docs/data/fleet.json`), routed live in the browser, with a per-delivery bar chart of sun minutes, time / km / sun totals for shortest vs Fayy, sun minutes avoided per extra km, and an extra-fuel estimate (3.0 L/100 km, AED 2.8/L). At midday about 90% of streets are in direct sun, so the saving is small (about 1% on 25 Sep); the tab says so.
 - **Best departure time**: a line chart of sun minutes for the selected trip across every slot, plus "Leave at HH:MM for P% less sun" when a slot within the next 90 minutes is at least 15% better.
 
 ## Height coverage (the biggest data risk)
@@ -64,7 +64,7 @@ tests/test_shadows.py
 - Sun position computed once at the bbox centre (the error across ~3.5 km is negligible).
 - Shadows beyond the bbox are clipped naturally only by the data extent; tall towers near the edge still cast full-length shadows.
 - "Minutes in direct sun" = Σ edge travel time × sun fraction, at the selected slot for the whole trip (no time-progression within a trip).
-- Heat dose = 10 deliveries alternating A→B / B→A in consecutive half-hour slots from the selected time.
+- Heat dose = 18 deliveries alternating A→B / B→A in consecutive half-hour slots from the selected time.
 - Preset trip names are approximate landmark labels; each preset also sets its time slot (08:00 or 16:00), and points snap to the nearest graph node.
 - Needs WebGL (MapLibre). Leaflet fallback was not needed.
 

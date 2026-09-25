@@ -12,7 +12,11 @@ from config import OUT  # noqa: E402
 
 K_BALANCED = 3
 SHIFT_SEED = 42
-SHIFT_SLOTS = ["1100", "1130", "1200", "1230", "1300", "1330", "1400", "1430", "1500"]
+SHIFTS = {
+    "afternoon": ["1530", "1600", "1630", "1700", "1730", "1800", "1830"],
+    "midday": ["1100", "1130", "1200", "1230", "1300", "1330", "1400", "1430", "1500"],
+}
+N_DELIVERIES = 18
 
 RESTAURANTS = [
     ("The Galleria, Al Maryah", 54.3891, 24.5014),
@@ -38,19 +42,17 @@ TOWERS = [
 ]
 
 
-def shift_schedule():
+def shift_schedule(slots):
+    """The same 18 seeded restaurant -> tower deliveries, spread evenly over the shift's slots."""
     rnd = random.Random(SHIFT_SEED)
-    trips = []
-    for slot in SHIFT_SLOTS:
-        for _ in range(2):
-            trips.append({"slot": slot, "r": rnd.randrange(len(RESTAURANTS)), "t": rnd.randrange(len(TOWERS))})
-    return trips
+    pairs = [(rnd.randrange(len(RESTAURANTS)), rnd.randrange(len(TOWERS))) for _ in range(N_DELIVERIES)]
+    return [{"slot": slots[i * len(slots) // N_DELIVERIES], "r": r, "t": t} for i, (r, t) in enumerate(pairs)]
 
 
 def main():
-    out = {"k": K_BALANCED, "restaurants": RESTAURANTS, "towers": TOWERS, "shift": shift_schedule()}
+    out = {"k": K_BALANCED, "restaurants": RESTAURANTS, "towers": TOWERS, "shifts": {k: shift_schedule(v) for k, v in SHIFTS.items()}}
     (OUT / "fleet.json").write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    print(f"fleet: {len(out['shift'])} shift deliveries")
+    print(f"fleet: {N_DELIVERIES} deliveries per shift ({', '.join(SHIFTS)})")
 
 
 if __name__ == "__main__":

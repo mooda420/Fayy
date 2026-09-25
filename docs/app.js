@@ -10,17 +10,17 @@ const I18N = {
   en: {},
   ar: { tagline: "الظل الذي يعود. مسارات مظللة في جزيرتي الريم والمارية، أبوظبي.", mode: "الوضع", moto: "دراجة نارية", walk: "مشي", date: "التاريخ",
     time: "الوقت", pref: "تفضيل الظل", fastest: "الأسرع", balanced: "متوازن", maxshade: "أقصى ظل", trips: "رحلات تجريبية",
-    hint: "أو انقر على الخريطة لتحديد A ثم B.", shortest: "الأقصر", dose: "جرعة الحرارة: وردية من 10 توصيلات",
+    hint: "أو انقر على الخريطة لتحديد A ثم B.", shortest: "الأقصر", dose: "جرعة الحرارة: وردية من 18 توصيلة",
     banner: "لا يوجد ظل تقريبًا الآن: لهذا يوجد حظر العمل في الخارج وقت الظهيرة (12:30–15:00، 15 يونيو–15 سبتمبر).",
     wait: "◆ أماكن انتظار مظللة قرب B" },
   ur: { tagline: "واپس آنے والا سایہ۔ جزیرہ الریم اور المریہ، ابوظہبی کے لیے سایہ دار راستے۔", mode: "طریقہ", moto: "موٹر سائیکل", walk: "پیدل", date: "تاریخ",
     time: "وقت", pref: "سایہ کی ترجیح", fastest: "تیز ترین", balanced: "متوازن", maxshade: "زیادہ سایہ", trips: "ڈیمو سفر",
-    hint: "یا نقشے پر کلک کر کے A پھر B منتخب کریں۔", shortest: "مختصر ترین", dose: "حرارت کی خوراک: 10 ڈیلیوریز کی شفٹ",
+    hint: "یا نقشے پر کلک کر کے A پھر B منتخب کریں۔", shortest: "مختصر ترین", dose: "حرارت کی خوراک: 18 ڈیلیوریز کی شفٹ",
     banner: "اس وقت تقریباً کوئی سایہ نہیں: اسی لیے دوپہر میں باہر کام پر پابندی ہے (12:30–15:00، 15 جون–15 ستمبر)۔",
     wait: "◆ B کے قریب سایہ دار انتظار کی جگہیں" },
 };
 
-const S = { mode: "moto", date: 0, slot: 20, k: 3, A: null, B: null, lang: "en", playing: null, tab: "route" };
+const S = { mode: "moto", date: 0, slot: 20, k: 3, A: null, B: null, lang: "en", playing: null, tab: "route", shift: "afternoon" };
 let meta, stats, fleet = null, graphs = {}, shadowCache = {}, map, heatNow = null;
 
 const $ = (id) => document.getElementById(id);
@@ -131,7 +131,7 @@ function setupMap() {
     map.addLayer({ id: "pts-l", type: "symbol", source: "pts", layout: { "text-field": ["get", "l"], "text-size": 12, "text-font": ["Noto Sans Bold"], "text-allow-overlap": true }, paint: { "text-color": "#fff" } });
     map.on("click", onMapClick);
     await refresh();
-    runPreset(1);
+    runPreset(0, { ...PRESETS[0], slot: 20 });
   });
 }
 
@@ -234,7 +234,9 @@ async function renderShift() {
   if (!fleet) return;
   const g = await loadGraph("moto");
   $("shiftDate").textContent = `Date: ${meta.dates[S.date].label}.`;
-  const rows = fleet.shift.map((d) => {
+  const trips = fleet.shifts[S.shift];
+  $("shiftHours").textContent = `${fmtSlot(trips[0].slot)}–${fmtSlot(trips[trips.length - 1].slot)}`;
+  const rows = trips.map((d) => {
     const si = S.date * meta.slots.length + meta.slots.indexOf(d.slot);
     const r = fleet.restaurants[d.r], tw = fleet.towers[d.t];
     const src = nearestNode(g, r[1], r[2]), dst = nearestNode(g, tw[1], tw[2]);
@@ -247,7 +249,6 @@ async function renderShift() {
   const pct = ts > 0 ? Math.round(100 * (1 - tf / ts)) : 0;
   const dKm = tfk - tsk, dMin = tft - tst, saved = ts - tf, sg = (v) => (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(1);
   $("shiftHead").textContent = `This shift: ${saved.toFixed(1)} fewer minutes in direct sun for ${sg(dKm)} km (${sg(dMin)} min)`;
-  $("shiftNote").classList.toggle("hidden", pct >= 10);
   $("shiftTotals").innerHTML = `<thead><tr><th></th><th class="s">Shortest total</th><th class="f">Fayy total</th><th>Difference</th></tr></thead><tbody>`
     + `<tr><td>Time</td><td>${tst.toFixed(1)} min</td><td>${tft.toFixed(1)} min</td><td>${sg(dMin)} min</td></tr>`
     + `<tr><td>Distance</td><td>${tsk.toFixed(1)} km</td><td>${tfk.toFixed(1)} km</td><td>${sg(dKm)} km</td></tr>`
@@ -266,7 +267,7 @@ async function renderShift() {
     const tip = `#${i + 1} ${fmtSlot(x.d.slot)} ${x.r[0]} → ${x.tw[0]}: shortest ${x.sk.toFixed(1)} km, ${x.s.toFixed(1)} min in sun; Fayy ${x.fk.toFixed(1)} km, ${x.f.toFixed(1)} min in sun`;
     svg += `<g class="bar" data-i="${i}"><title>${tip}</title><rect x="${x0}" y="${y(x.s)}" width="${bw}" height="${y(0) - y(x.s)}" fill="#ea580c"/>`
       + `<rect x="${x0 + bw}" y="${y(x.f)}" width="${bw}" height="${y(0) - y(x.f)}" fill="#0891b2"/><rect x="${x0}" y="${T}" width="${bw * 2}" height="${H - B - T}" fill="transparent"/></g>`;
-    if (i % 2 === 0) svg += `<text x="${x0 + bw}" y="${H - 5}" text-anchor="middle">${fmtSlot(x.d.slot)}</text>`;
+    if (!i || rows[i - 1].d.slot !== x.d.slot) svg += `<text x="${x0 + bw}" y="${H - 5}" text-anchor="middle">${fmtSlot(x.d.slot)}</text>`;
   });
   $("shiftChart").innerHTML = svg;
   $("shiftChart").onclick = $("shiftRows").onclick = (e) => {
@@ -350,12 +351,12 @@ function showWaitingSpots(dst, si) {
   $("waitNote").classList.toggle("hidden", !show.length);
 }
 
-/* Heat dose: 10 deliveries alternating A->B / B->A across consecutive half-hour slots. */
+/* Heat dose: 18 deliveries alternating A->B / B->A across consecutive half-hour slots. */
 function heatDose(g) {
   if (S.mode !== "moto") { $("doseOut").textContent = "Switch to Motorcycle to estimate a rider shift."; return; }
   const src = nearestNode(g, ...S.A), dst = nearestNode(g, ...S.B);
   let ss = 0, fs = 0;
-  for (let j = 0; j < 10; j++) {
+  for (let j = 0; j < 18; j++) {
     const slot = Math.min(S.slot + j, meta.slots.length - 1), si = S.date * meta.slots.length + slot;
     const a = j % 2 ? dst : src, b = j % 2 ? src : dst;
     ss += dijkstra(g, a, b, 0, si)?.sun || 0;
@@ -387,12 +388,14 @@ async function main() {
   $("date").innerHTML = meta.dates.map((d, i) => `<button data-v="${i}" class="${i === 0 ? "on" : ""}">${d.label}</button>`).join("");
   $("slider").max = meta.slots.length - 1;
   $("slider").value = S.slot;
+  updateLabels();
   $("presets").innerHTML = PRESETS.map((p, i) => `<button data-i="${i}">${p.name}</button>`).join("");
   $("stats").textContent = `Building heights (${stats.buildings}): ${stats.real} real (${stats.real_pct}%: ${stats.from_override} tower overrides, ${stats.with_height} measured, ${stats.from_floors} from floors) / ${stats.estimated} estimated from footprint / ${stats.defaulted} default 12 m.`;
   const seg = (id, fn) => { $(id).onclick = (e) => { const b = e.target.closest("button"); if (b) fn(b); }; };
   seg("mode", (b) => { S.mode = b.dataset.v; setSeg("mode", S.mode); refresh(); });
   seg("date", (b) => { S.date = +b.dataset.v; setSeg("date", S.date); refresh(); if (S.tab !== "route") setTab(S.tab); });
   seg("tabs", (b) => setTab(b.dataset.v));
+  seg("shiftSel", (b) => { S.shift = b.dataset.v; setSeg("shiftSel", S.shift); renderShift(); });
   seg("pref", (b) => { S.k = +b.dataset.v; setSeg("pref", S.k); route(); });
   seg("presets", (b) => runPreset(+b.dataset.i));
   seg("lang", (b) => { S.lang = b.dataset.lang; applyLang(); });
