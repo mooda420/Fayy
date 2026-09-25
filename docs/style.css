@@ -41,3 +41,4 @@ footer{font-size:11px;color:var(--mut);border-top:1px solid var(--line);padding-
 [dir=rtl] #panel{direction:rtl;text-align:right}
 @media (max-width:700px){#panel{top:auto;left:8px;right:8px;width:auto;height:52%}}
 .nogl{position:absolute;top:40%;left:380px;right:40px;color:#9a3412;font-size:16px}
+.heat{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:8px;padding:6px 10px;font-size:13px;margin-bottom:8px}

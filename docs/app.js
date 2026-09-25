@@ -20,7 +20,7 @@ const I18N = {
 };
 
 const S = { mode: "moto", date: 0, slot: 20, k: 3, A: null, B: null, lang: "en", playing: null };
-let meta, stats, graphs = {}, shadowCache = {}, map;
+let meta, stats, graphs = {}, shadowCache = {}, map, heatNow = null;
 
 const $ = (id) => document.getElementById(id);
 const fmtSlot = (s) => `${s.slice(0, 2)}:${s.slice(2)}`;
@@ -207,9 +207,28 @@ async function route() {
     head = `Fayy: ${dMin >= 0 ? "+" : "−"}${Math.abs(dMin).toFixed(1)} min, ${less}% less direct sun`;
   }
   $("headline").textContent = head;
+  S.saved = Math.max(0, short.sun - fayy.sun);
+  showHeat();
   $("result").classList.remove("hidden");
   showWaitingSpots(dst, si);
   heatDose(g);
+}
+
+/* Live heat from Open-Meteo (no key); the line stays hidden if the fetch fails. */
+async function fetchHeat() {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${((meta.bbox[1] + meta.bbox[3]) / 2).toFixed(4)}&longitude=${((meta.bbox[0] + meta.bbox[2]) / 2).toFixed(4)}&current=temperature_2m,apparent_temperature&timezone=Asia%2FDubai`;
+    const c = (await (await fetch(url)).json()).current;
+    if (typeof c.temperature_2m === "number" && typeof c.apparent_temperature === "number") heatNow = c;
+  } catch (err) { heatNow = null; }
+  showHeat();
+}
+
+function showHeat() {
+  const el = $("heat");
+  if (!heatNow || S.saved == null) { el.classList.add("hidden"); return; }
+  el.textContent = `🌡 Now ${Math.round(heatNow.temperature_2m)}°C, feels like ${Math.round(heatNow.apparent_temperature)}°C. Fayy saves ${(S.saved / 60).toFixed(1)} min in direct sun.`;
+  el.classList.remove("hidden");
 }
 
 /* Rider waiting spots: 3 nearest shaded street points within 150 m of B. */
@@ -282,5 +301,6 @@ async function main() {
   $("slider").oninput = (e) => { S.slot = +e.target.value; refresh(); };
   $("play").onclick = togglePlay;
   initMap();
+  fetchHeat();
 }
 main();
