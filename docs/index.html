@@ -21,7 +21,6 @@
   <nav class="tabs" id="tabs">
     <button data-v="route" class="on" data-i18n="tabRoute">Route</button>
     <button data-v="shift" data-i18n="tabShift">Rider shift</button>
-    <button data-v="canopy" data-i18n="tabCanopy">Shade planner</button>
   </nav>
 
   <div id="tab-route">
@@ -67,8 +66,8 @@
     <div class="headline" id="headline"></div>
     <div class="heat hidden" id="heat"></div>
     <div class="cards">
-      <div class="card short"><div class="k"><i class="sw dash"></i><span data-i18n="shortest">Shortest</span></div><div class="v" id="sTime"></div><div class="s" id="sSun"></div></div>
-      <div class="card fayy"><div class="k"><i class="sw"></i>Fayy</div><div class="v" id="fTime"></div><div class="s" id="fSun"></div></div>
+      <div class="card short"><div class="k"><i class="sw dash"></i><span data-i18n="shortest">Shortest</span></div><div class="v" id="sTime"></div><div class="s dist" id="sDist"></div><div class="s" id="sSun"></div></div>
+      <div class="card fayy"><div class="k"><i class="sw"></i>Fayy</div><div class="v" id="fTime"></div><div class="s dist" id="fDist"></div><div class="s" id="fSun"></div></div>
     </div>
     <details class="depart" id="depart" open>
       <summary data-i18n="departTitle">Best departure time</summary>
@@ -88,21 +87,19 @@
   <div id="tab-shift" class="hidden">
     <p class="muted small">18 deliveries from 6 restaurants to 12 residential towers, 11:00–15:00, Motorcycle, Balanced shade. <span id="shiftDate"></span></p>
     <div class="headline" id="shiftHead">—</div>
-    <div class="banner hidden" id="shiftNote">At midday the sun is almost overhead and about 90% of the streets are in direct sun, so re-routing alone saves little. This is the case for the midday work break and for building shade where it matters (see Shade planner).</div>
-    <div class="cards">
-      <div class="card short"><div class="k"><i class="sw dash"></i><span data-i18n="shortest">Shortest</span></div><div class="v" id="shiftS"></div><div class="s">in direct sun</div></div>
-      <div class="card fayy"><div class="k"><i class="sw"></i>Fayy</div><div class="v" id="shiftF"></div><div class="s">in direct sun</div></div>
-    </div>
+    <div class="banner hidden" id="shiftNote">At midday the sun is almost overhead and about 90% of the streets are in direct sun, so re-routing alone saves little. This is the case for the midday work break and for building shade where it matters.</div>
+    <table class="stbl" id="shiftTotals"></table>
+    <div class="trade" id="shiftTrade"></div>
+    <div class="muted small" id="shiftFuel"></div>
     <label class="mt">Sun minutes per delivery</label>
     <svg id="shiftChart" class="chart" viewBox="0 0 300 150"></svg>
-    <p class="hint">Click a bar to show that delivery on the map.</p>
+    <p class="hint">Click a bar or a row to show that delivery on the map.</p>
+    <details class="depart">
+      <summary>Deliveries</summary>
+      <table class="stbl rows" id="shiftRows"></table>
+    </details>
   </div>
 
-  <div id="tab-canopy" class="hidden">
-    <p class="muted small">Street segments where even the Fayy route has to ride in direct sun, ranked by rider-minutes over the 18-delivery shift plus 200 random trips (<span id="canopyDate"></span>). Shade here helps every rider.</p>
-    <label data-i18n="canopyTop">Top places to build shade</label>
-    <ol id="canopyList" class="canopy"></ol>
-  </div>
 
   <footer>
     <div>Map data © OpenStreetMap contributors, Overture Maps Foundation · Tiles © OpenFreeMap</div>

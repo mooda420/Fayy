@@ -1,5 +1,6 @@
 /* Fayy — shade-aware routing, fully client-side. */
 const D = "data/";
+const FUEL_L_PER_100KM = 3.0, FUEL_PRICE_AED_PER_L = 2.8;
 const PRESETS = [
   { name: "Gate Towers → North Reem (Bilshu'oum St) · 08:00 · 2.9 km", a: [54.4098, 24.4923], b: [54.3999, 24.5078], slot: 4 },
   { name: "North Reem → Marina Square · 16:00 · 3.5 km", a: [54.4064, 24.5100], b: [54.3972, 24.4872], slot: 20 },
@@ -115,18 +116,11 @@ function setupMap() {
     const empty = { type: "FeatureCollection", features: [] };
     map.addSource("shadows", { type: "geojson", data: empty });
     map.addSource("buildings", { type: "geojson", data: `${D}buildings.geojson` });
-    ["route-short", "route-fayy", "pts", "wait", "canopy"].forEach((s) => map.addSource(s, { type: "geojson", data: empty }));
+    ["route-short", "route-fayy", "pts", "wait"].forEach((s) => map.addSource(s, { type: "geojson", data: empty }));
     map.addLayer({ id: "shadows", type: "fill", source: "shadows", paint: { "fill-color": "#1e293b", "fill-opacity": 0.55 } });
     map.addLayer({ id: "bld", type: "fill-extrusion", source: "buildings", paint: {
       "fill-extrusion-color": ["interpolate", ["linear"], ["get", "height"], 0, "#f8fafc", 100, "#e2e8f0", 300, "#cbd5e1"],
       "fill-extrusion-height": ["get", "height"], "fill-extrusion-opacity": 0.9 } });
-    map.addLayer({ id: "canopy-glow", type: "line", source: "canopy", layout: { visibility: "none", "line-cap": "round" },
-      paint: { "line-color": "#ef4444", "line-width": 18, "line-opacity": 0.35, "line-blur": 8 } });
-    map.addLayer({ id: "canopy", type: "line", source: "canopy", layout: { visibility: "none", "line-cap": "round" },
-      paint: { "line-color": "#dc2626", "line-width": 6 } });
-    map.addLayer({ id: "canopy-n", type: "symbol", source: "canopy", layout: { visibility: "none", "symbol-placement": "line-center",
-      "text-field": ["to-string", ["get", "n"]], "text-size": 13, "text-font": ["Noto Sans Bold"], "text-allow-overlap": true },
-      paint: { "text-color": "#fff", "text-halo-color": "#b91c1c", "text-halo-width": 3 } });
     map.addLayer({ id: "route-short", type: "line", source: "route-short", layout: { "line-cap": "round", "line-join": "round" },
       paint: { "line-color": "#ea580c", "line-width": 4, "line-dasharray": [1.5, 1.5] } });
     map.addLayer({ id: "route-fayy-glow", type: "line", source: "route-fayy", paint: { "line-color": "#06b6d4", "line-width": 12, "line-opacity": 0.3, "line-blur": 4 } });
@@ -180,6 +174,7 @@ function updateLabels() {
 async function refresh() { updateLabels(); await showShadows(); await route(); }
 
 function fmtMin(s) { return `${(s / 60).toFixed(1)} min`; }
+function fmtKm(m) { return `${(m / 1000).toFixed(1)} km`; }
 
 async function route() {
   const g = await loadGraph(S.mode);
@@ -203,6 +198,8 @@ async function route() {
   map.getSource("route-fayy").setData(line(fayy));
   $("sTime").textContent = fmtMin(short.time);
   $("fTime").textContent = fmtMin(fayy.time);
+  $("sDist").textContent = fmtKm(short.len);
+  $("fDist").textContent = fmtKm(fayy.len);
   $("sSun").textContent = `☀ ${fmtMin(short.sun)} in direct sun`;
   $("fSun").textContent = `☀ ${fmtMin(fayy.sun)} in direct sun`;
   let head;
@@ -211,7 +208,10 @@ async function route() {
   else {
     const dMin = (fayy.time - short.time) / 60;
     const less = short.sun > 0 ? Math.round(100 * (1 - fayy.sun / short.sun)) : 0;
-    head = `Fayy: ${dMin >= 0 ? "+" : "−"}${Math.abs(dMin).toFixed(1)} min, ${less}% less direct sun`;
+    const dKm = (fayy.len - short.len) / 1000;
+    head = dKm >= 0.05
+      ? `Fayy: ${dMin >= 0 ? "+" : "−"}${Math.abs(dMin).toFixed(1)} min, +${dKm.toFixed(1)} km, ${less}% less direct sun`
+      : `Fayy: same distance, ${less}% less sun`;
   }
   $("headline").textContent = head;
   S.saved = Math.max(0, short.sun - fayy.sun);
@@ -222,17 +222,12 @@ async function route() {
   bestDeparture(g, src, dst);
 }
 
-/* ---------- tabs: rider shift + shade planner ---------- */
+/* ---------- tabs: route + rider shift ---------- */
 function setTab(tab) {
   S.tab = tab;
   setSeg("tabs", tab);
-  ["route", "shift", "canopy"].forEach((k) => $(`tab-${k}`).classList.toggle("hidden", k !== tab));
-  const vis = tab === "canopy" ? "visible" : "none";
-  ["canopy-glow", "canopy", "canopy-n"].forEach((l) => map && map.getLayer(l) && map.setLayoutProperty(l, "visibility", vis));
-  const routeVis = tab === "canopy" ? "none" : "visible";
-  ["route-short", "route-fayy-glow", "route-fayy", "wait", "pts", "pts-l"].forEach((l) => map && map.getLayer(l) && map.setLayoutProperty(l, "visibility", routeVis));
+  ["route", "shift"].forEach((k) => $(`tab-${k}`).classList.toggle("hidden", k !== tab));
   if (tab === "shift") renderShift();
-  if (tab === "canopy") renderCanopy();
 }
 
 async function renderShift() {
@@ -244,28 +239,38 @@ async function renderShift() {
     const r = fleet.restaurants[d.r], tw = fleet.towers[d.t];
     const src = nearestNode(g, r[1], r[2]), dst = nearestNode(g, tw[1], tw[2]);
     const sh = dijkstra(g, src, dst, 0, si), fy = dijkstra(g, src, dst, fleet.k, si);
-    return { d, r, tw, s: sh ? sh.sun / 60 : 0, f: fy ? fy.sun / 60 : 0 };
+    const m = (r, k) => (r ? r[k] : 0);
+    return { d, r, tw, s: m(sh, "sun") / 60, f: m(fy, "sun") / 60, st: m(sh, "time") / 60, ft: m(fy, "time") / 60, sk: m(sh, "len") / 1000, fk: m(fy, "len") / 1000 };
   });
-  const ts = rows.reduce((a, x) => a + x.s, 0), tf = rows.reduce((a, x) => a + x.f, 0);
+  const sum = (k) => rows.reduce((a, x) => a + x[k], 0);
+  const ts = sum("s"), tf = sum("f"), tst = sum("st"), tft = sum("ft"), tsk = sum("sk"), tfk = sum("fk");
   const pct = ts > 0 ? Math.round(100 * (1 - tf / ts)) : 0;
-  $("shiftHead").textContent = `This shift: ${(ts - tf).toFixed(1)} fewer minutes in direct sun (${pct}%)`;
+  const dKm = tfk - tsk, dMin = tft - tst, saved = ts - tf, sg = (v) => (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(1);
+  $("shiftHead").textContent = `This shift: ${saved.toFixed(1)} fewer minutes in direct sun for ${sg(dKm)} km (${sg(dMin)} min)`;
   $("shiftNote").classList.toggle("hidden", pct >= 10);
-  $("shiftS").textContent = `${ts.toFixed(1)} min`;
-  $("shiftF").textContent = `${tf.toFixed(1)} min`;
+  $("shiftTotals").innerHTML = `<thead><tr><th></th><th class="s">Shortest total</th><th class="f">Fayy total</th><th>Difference</th></tr></thead><tbody>`
+    + `<tr><td>Time</td><td>${tst.toFixed(1)} min</td><td>${tft.toFixed(1)} min</td><td>${sg(dMin)} min</td></tr>`
+    + `<tr><td>Distance</td><td>${tsk.toFixed(1)} km</td><td>${tfk.toFixed(1)} km</td><td>${sg(dKm)} km</td></tr>`
+    + `<tr><td>Direct sun</td><td>${ts.toFixed(1)} min</td><td>${tf.toFixed(1)} min</td><td>${sg(-saved)} min (${-pct}%)</td></tr></tbody>`;
+  $("shiftTrade").textContent = `Sun minutes avoided per extra km: ${dKm > 0.0005 ? (saved / dKm).toFixed(1) : "∞ – no extra distance"}`;
+  const fuelL = Math.max(0, dKm) * FUEL_L_PER_100KM / 100;
+  $("shiftFuel").textContent = `Extra fuel cost (estimate): ${fuelL.toFixed(2)} L ≈ AED ${(fuelL * FUEL_PRICE_AED_PER_L).toFixed(2)} this shift, at ${FUEL_L_PER_100KM} L/100 km and AED ${FUEL_PRICE_AED_PER_L}/L.`;
+  $("shiftRows").innerHTML = `<thead><tr><th>#</th><th>Time</th><th>km S / F</th><th>min S / F</th><th>sun S / F</th></tr></thead><tbody>`
+    + rows.map((x, i) => `<tr data-i="${i}" title="${x.r[0]} → ${x.tw[0]}"><td>${i + 1}</td><td>${fmtSlot(x.d.slot)}</td><td>${x.sk.toFixed(1)} / ${x.fk.toFixed(1)}</td><td>${x.st.toFixed(1)} / ${x.ft.toFixed(1)}</td><td><span class="s">${x.s.toFixed(1)}</span> / <span class="f">${x.f.toFixed(1)}</span></td></tr>`).join("") + "</tbody>";
   const W = 300, H = 150, L = 22, B = 18, T = 8, max = Math.max(1, ...rows.map((x) => x.s));
   const gw = (W - L - 4) / rows.length, bw = gw * 0.38, y = (v) => H - B - (v / max) * (H - B - T);
   let svg = "";
   for (let v = 0; v <= max; v += max > 4 ? 2 : 1) svg += `<line x1="${L}" x2="${W - 2}" y1="${y(v)}" y2="${y(v)}" stroke="#e2e8f0"/><text x="${L - 3}" y="${y(v) + 3}" text-anchor="end">${v}</text>`;
   rows.forEach((x, i) => {
     const x0 = L + i * gw + gw * 0.1;
-    const tip = `#${i + 1} ${fmtSlot(x.d.slot)} ${x.r[0]} → ${x.tw[0]}: shortest ${x.s.toFixed(1)} min, Fayy ${x.f.toFixed(1)} min in sun`;
+    const tip = `#${i + 1} ${fmtSlot(x.d.slot)} ${x.r[0]} → ${x.tw[0]}: shortest ${x.sk.toFixed(1)} km, ${x.s.toFixed(1)} min in sun; Fayy ${x.fk.toFixed(1)} km, ${x.f.toFixed(1)} min in sun`;
     svg += `<g class="bar" data-i="${i}"><title>${tip}</title><rect x="${x0}" y="${y(x.s)}" width="${bw}" height="${y(0) - y(x.s)}" fill="#ea580c"/>`
       + `<rect x="${x0 + bw}" y="${y(x.f)}" width="${bw}" height="${y(0) - y(x.f)}" fill="#0891b2"/><rect x="${x0}" y="${T}" width="${bw * 2}" height="${H - B - T}" fill="transparent"/></g>`;
     if (i % 2 === 0) svg += `<text x="${x0 + bw}" y="${H - 5}" text-anchor="middle">${fmtSlot(x.d.slot)}</text>`;
   });
   $("shiftChart").innerHTML = svg;
-  $("shiftChart").onclick = (e) => {
-    const b = e.target.closest(".bar"); if (!b) return;
+  $("shiftChart").onclick = $("shiftRows").onclick = (e) => {
+    const b = e.target.closest("[data-i]"); if (!b) return;
     const x = rows[+b.dataset.i];
     S.mode = "moto"; setSeg("mode", "moto"); S.k = fleet.k; setSeg("pref", S.k);
     setTab("route");
@@ -273,23 +278,6 @@ async function renderShift() {
   };
 }
 
-function renderCanopy() {
-  if (!fleet) return;
-  const top = fleet.canopy[meta.dates[S.date].key] || [];
-  $("canopyDate").textContent = meta.dates[S.date].label;
-  map.getSource("canopy").setData({ type: "FeatureCollection", features: top.map((c, i) => ({ type: "Feature", properties: { n: i + 1 }, geometry: { type: "LineString", coordinates: c.coords } })) });
-  $("canopyList").innerHTML = top.map((c) => `<li><b>${c.minutes.toFixed(1)} rider-min</b> in sun · ${c.name || "Unnamed street"}<div class="muted">${c.length_m} m segment · on ${c.trips} Fayy trips</div></li>`).join("");
-  $("canopyList").onclick = (e) => {
-    const li = e.target.closest("li"); if (!li) return;
-    map.flyTo({ center: top[[...li.parentNode.children].indexOf(li)].mid, zoom: 16.5, duration: 900 });
-  };
-  if (top.length) {
-    const xs = top.flatMap((c) => c.coords);
-    const lo = xs.reduce((a, p) => [Math.min(a[0], p[0]), Math.min(a[1], p[1])], [180, 90]);
-    const hi = xs.reduce((a, p) => [Math.max(a[0], p[0]), Math.max(a[1], p[1])], [-180, -90]);
-    map.fitBounds([lo, hi], { padding: window.innerWidth > 700 ? { top: 80, bottom: 80, left: 400, right: 80 } : 40, duration: 800 });
-  }
-}
 
 /* Live heat from Open-Meteo (no key); the line stays hidden if the fetch fails. */
 async function fetchHeat() {
@@ -395,7 +383,7 @@ function togglePlay() {
 async function main() {
   [meta, stats] = await Promise.all([fetch(`${D}meta.json`).then((r) => r.json()), fetch(`${D}stats.json`).then((r) => r.json())]);
   fetch(`${D}fleet.json`).then((r) => r.json()).then((f) => { fleet = f; })
-    .catch(() => document.querySelectorAll("#tabs [data-v=shift], #tabs [data-v=canopy]").forEach((b) => b.remove()));
+    .catch(() => $("tabs").classList.add("hidden"));
   $("date").innerHTML = meta.dates.map((d, i) => `<button data-v="${i}" class="${i === 0 ? "on" : ""}">${d.label}</button>`).join("");
   $("slider").max = meta.slots.length - 1;
   $("slider").value = S.slot;

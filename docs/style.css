@@ -50,12 +50,15 @@ footer{font-size:11px;color:var(--mut);border-top:1px solid var(--line);padding-
 .chart{width:100%;height:auto;display:block;background:var(--chip);border:1px solid var(--line);border-radius:8px}
 .chart .bar{cursor:pointer}.chart .bar:hover{opacity:.75}
 .chart text{font-size:8px;fill:var(--mut)}
-.canopy{margin:0;padding-left:20px}
-.canopy li{padding:6px 4px;border-bottom:1px solid var(--line);cursor:pointer}
-.canopy li:hover{background:var(--chip)}
-.canopy li b{color:#dc2626}
-.canopy li .muted{font-size:12px}
 .depart{margin-top:10px}
 .depart summary{cursor:pointer;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin-bottom:6px}
 .legend{display:flex;align-items:center;gap:6px;margin:4px 0 0}
 .depart-hint{margin-top:6px;background:#ecfdf5;border:1px solid #a7f3d0;color:#047857;border-radius:8px;padding:6px 10px;font-size:13px;font-weight:600}
+.card .dist{color:var(--fg);font-weight:600}
+.stbl{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0}
+.stbl th,.stbl td{padding:4px 5px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.stbl th:first-child,.stbl td:first-child{text-align:left}
+.stbl th{color:var(--mut);font-weight:600}
+.stbl .s{color:var(--orange)}.stbl .f{color:var(--cyan)}
+.stbl.rows td{font-size:11px}.stbl.rows tbody tr{cursor:pointer}.stbl.rows tbody tr:hover{background:var(--chip)}
+.trade{background:#ecfeff;border:1px solid #a5f3fc;color:#0e7490;border-radius:8px;padding:6px 10px;font-size:13px;font-weight:600;margin:6px 0}

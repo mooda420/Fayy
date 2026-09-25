@@ -22,9 +22,9 @@ Everything at demo time is static: HTML + vanilla JS + MapLibre GL JS + OpenFree
 - Result card: travel time and minutes in direct sun for both routes + headline.
 - Midday banner when almost no shade exists (outdoor-work ban reminder, 12:30–15:00, 15 Jun–15 Sep).
 - Stretch goals done: ◆ shaded rider waiting spots within 150 m of B, EN / العربية / اردو toggle, heat-dose estimate for a 10-delivery shift.
+- **Distance**: every route shows time · km (summed from graph edge `length_m`) · minutes in direct sun.
 - **Live heat**: current temperature and feels-like temperature for the map centre from Open-Meteo (free, no key), shown in the result card with the minutes Fayy saves. The line is hidden if the fetch fails.
-- **Rider shift tab**: 18 seeded deliveries (6 restaurants → 12 residential towers, 11:00–15:00, Motorcycle, Balanced), routed live in the browser, with a per-delivery bar chart of sun minutes for shortest vs Fayy. At midday the sun is almost overhead, so the saving is small (about 1% on 25 Sep), and the tab says so.
-- **Shade planner tab**: `pipeline/fleet.py` routes the shift trips plus 200 seeded random trips and ranks street segments where even the Fayy route rides in direct sun (at least 50% sun), by rider-minutes. The top 10 glow red on the map with a list; street names come from Nominatim (English where available). The output is `docs/data/fleet.json`.
+- **Rider shift tab**: 18 seeded deliveries (6 restaurants → 12 residential towers, 11:00–15:00, Motorcycle, Balanced; schedule from `pipeline/fleet.py` → `docs/data/fleet.json`), routed live in the browser, with a per-delivery bar chart of sun minutes, time / km / sun totals for shortest vs Fayy, sun minutes avoided per extra km, and an extra-fuel estimate (3.0 L/100 km, AED 2.8/L). At midday the sun is almost overhead, so the saving is small (about 1% on 25 Sep), and the tab says so.
 - **Best departure time**: a line chart of sun minutes for the selected trip across every slot, plus "Leave at HH:MM for P% less sun" when a slot within the next 90 minutes is at least 15% better.
 
 ## Height coverage (the biggest data risk)
