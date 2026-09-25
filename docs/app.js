@@ -1,9 +1,9 @@
 /* Fayy — shade-aware routing, fully client-side. */
 const D = "data/";
 const PRESETS = [
-  { name: "The Bridges (Shams) → Reem Central Park · 08:00", a: [54.4051, 24.5088], b: [54.4000, 24.4944], slot: 4 },
-  { name: "Reem Central Park → Al Maryah Island · 16:00", a: [54.3988, 24.4981], b: [54.3875, 24.4952], slot: 20 },
-  { name: "Sorbonne University → Najmat · 16:00", a: [54.4102, 24.4905], b: [54.4034, 24.4876], slot: 20 },
+  { name: "Gate Towers → North Reem (Bilshu'oum St) · 08:00 · 2.9 km", a: [54.4098, 24.4923], b: [54.3999, 24.5078], slot: 4 },
+  { name: "North Reem → Marina Square · 16:00 · 3.5 km", a: [54.4064, 24.5100], b: [54.3972, 24.4872], slot: 20 },
+  { name: "East Reem → Al Maryah Island · 16:00 · 4.1 km", a: [54.4122, 24.5051], b: [54.3899, 24.5015], slot: 20 },
 ];
 const I18N = {
   en: {},
@@ -103,7 +103,7 @@ function initMap() {
 
 function makeMap() {
   return new maplibregl.Map({
-    container: "map", style: "https://tiles.openfreemap.org/styles/dark",
+    container: "map", style: "https://tiles.openfreemap.org/styles/positron",
     center: [54.399, 24.4955], zoom: 14.6, pitch: 55, bearing: -30, antialias: true,
     attributionControl: { customAttribution: "Map data © OpenStreetMap contributors, Overture Maps Foundation" },
   });
@@ -116,18 +116,18 @@ function setupMap() {
     map.addSource("shadows", { type: "geojson", data: empty });
     map.addSource("buildings", { type: "geojson", data: `${D}buildings.geojson` });
     ["route-short", "route-fayy", "pts", "wait"].forEach((s) => map.addSource(s, { type: "geojson", data: empty }));
-    map.addLayer({ id: "shadows", type: "fill", source: "shadows", paint: { "fill-color": "#1d4ed8", "fill-opacity": 0.38 } });
+    map.addLayer({ id: "shadows", type: "fill", source: "shadows", paint: { "fill-color": "#1e293b", "fill-opacity": 0.55 } });
     map.addLayer({ id: "bld", type: "fill-extrusion", source: "buildings", paint: {
-      "fill-extrusion-color": ["interpolate", ["linear"], ["get", "height"], 0, "#2b3440", 100, "#3b4a5c", 300, "#56708c"],
-      "fill-extrusion-height": ["get", "height"], "fill-extrusion-opacity": 0.85 } });
+      "fill-extrusion-color": ["interpolate", ["linear"], ["get", "height"], 0, "#f8fafc", 100, "#e2e8f0", 300, "#cbd5e1"],
+      "fill-extrusion-height": ["get", "height"], "fill-extrusion-opacity": 0.9 } });
     map.addLayer({ id: "route-short", type: "line", source: "route-short", layout: { "line-cap": "round", "line-join": "round" },
-      paint: { "line-color": "#fb923c", "line-width": 4, "line-dasharray": [1.5, 1.5] } });
-    map.addLayer({ id: "route-fayy-glow", type: "line", source: "route-fayy", paint: { "line-color": "#22d3ee", "line-width": 12, "line-opacity": 0.25, "line-blur": 4 } });
+      paint: { "line-color": "#ea580c", "line-width": 4, "line-dasharray": [1.5, 1.5] } });
+    map.addLayer({ id: "route-fayy-glow", type: "line", source: "route-fayy", paint: { "line-color": "#06b6d4", "line-width": 12, "line-opacity": 0.3, "line-blur": 4 } });
     map.addLayer({ id: "route-fayy", type: "line", source: "route-fayy", layout: { "line-cap": "round", "line-join": "round" },
-      paint: { "line-color": "#22d3ee", "line-width": 5 } });
-    map.addLayer({ id: "wait", type: "circle", source: "wait", paint: { "circle-radius": 7, "circle-color": "#34d399", "circle-stroke-color": "#022c22", "circle-stroke-width": 2 } });
-    map.addLayer({ id: "pts", type: "circle", source: "pts", paint: { "circle-radius": 9, "circle-color": ["match", ["get", "l"], "A", "#fb923c", "#22d3ee"], "circle-stroke-color": "#fff", "circle-stroke-width": 2 } });
-    map.addLayer({ id: "pts-l", type: "symbol", source: "pts", layout: { "text-field": ["get", "l"], "text-size": 12, "text-font": ["Noto Sans Bold"], "text-allow-overlap": true }, paint: { "text-color": "#000" } });
+      paint: { "line-color": "#0891b2", "line-width": 5 } });
+    map.addLayer({ id: "wait", type: "circle", source: "wait", paint: { "circle-radius": 7, "circle-color": "#10b981", "circle-stroke-color": "#fff", "circle-stroke-width": 2 } });
+    map.addLayer({ id: "pts", type: "circle", source: "pts", paint: { "circle-radius": 9, "circle-color": ["match", ["get", "l"], "A", "#ea580c", "#0891b2"], "circle-stroke-color": "#fff", "circle-stroke-width": 2 } });
+    map.addLayer({ id: "pts-l", type: "symbol", source: "pts", layout: { "text-field": ["get", "l"], "text-size": 12, "text-font": ["Noto Sans Bold"], "text-allow-overlap": true }, paint: { "text-color": "#fff" } });
     map.on("click", onMapClick);
     await refresh();
     runPreset(1);
@@ -248,7 +248,7 @@ function heatDose(g) {
     fs += dijkstra(g, a, b, S.k, si)?.sun || 0;
   }
   const saved = ss > 0 ? Math.round(100 * (1 - fs / ss)) : 0;
-  $("doseOut").innerHTML = `Shortest: <b style="color:#fb923c">${(ss / 60).toFixed(0)} min</b> in sun · Fayy: <b style="color:#22d3ee">${(fs / 60).toFixed(0)} min</b> (−${saved}%)`;
+  $("doseOut").innerHTML = `Shortest: <b style="color:#ea580c">${(ss / 60).toFixed(0)} min</b> in sun · Fayy: <b style="color:#0891b2">${(fs / 60).toFixed(0)} min</b> (−${saved}%)`;
 }
 
 function applyLang() {

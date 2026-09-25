@@ -1,38 +1,38 @@
-:root{--bg:#0d1117;--panel:rgba(13,17,23,.92);--fg:#e6edf3;--mut:#8b949e;--cyan:#22d3ee;--orange:#fb923c;--line:#30363d}
+:root{--bg:#f4f6f8;--panel:rgba(255,255,255,.94);--fg:#0f172a;--mut:#64748b;--cyan:#0891b2;--orange:#ea580c;--line:#e2e8f0;--chip:#f1f5f9}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 #map{position:absolute;inset:0}
-#panel{position:absolute;top:12px;left:12px;bottom:12px;width:340px;overflow-y:auto;background:var(--panel);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:14px;padding:16px 16px 10px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+#panel{position:absolute;top:12px;left:12px;bottom:12px;width:340px;overflow-y:auto;background:var(--panel);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:14px;padding:16px 16px 10px;box-shadow:0 10px 40px rgba(15,23,42,.18)}
 h1{margin:0;font-size:26px;letter-spacing:.5px}
 h1 .ar{color:var(--cyan);font-weight:500;margin-left:6px}
 .tag{margin:4px 0 8px;color:var(--mut)}
 section{margin:14px 0}
 label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin-bottom:6px}
 label b{color:var(--fg);font-size:14px;margin-left:4px}
-.seg{display:flex;gap:4px;background:#161b22;border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg{display:flex;gap:4px;background:var(--chip);border:1px solid var(--line);border-radius:10px;padding:3px}
 .seg button{flex:1;border:0;background:transparent;color:var(--fg);padding:7px 6px;border-radius:7px;cursor:pointer;font:inherit}
-.seg button.on{background:#1f6f8b;color:#fff}
+.seg button.on{background:var(--cyan);color:#fff}
 .row{display:flex;align-items:center;gap:10px}
 input[type=range]{flex:1;accent-color:var(--cyan)}
 .play{width:36px;height:36px;border-radius:50%;border:1px solid var(--cyan);background:transparent;color:var(--cyan);cursor:pointer;font-size:14px}
-.play.on{background:var(--cyan);color:#000}
+.play.on{background:var(--cyan);color:#fff}
 .presets{display:flex;flex-direction:column;gap:6px}
-.presets button{text-align:left;border:1px solid var(--line);background:#161b22;color:var(--fg);padding:8px 10px;border-radius:8px;cursor:pointer;font:inherit}
+.presets button{text-align:left;border:1px solid var(--line);background:var(--chip);color:var(--fg);padding:8px 10px;border-radius:8px;cursor:pointer;font:inherit}
 .presets button:hover{border-color:var(--cyan)}
 .hint{color:var(--mut);font-size:12px;margin:6px 0 0}
 .muted{color:var(--mut)}
-.banner{background:#3b1d0a;border:1px solid var(--orange);color:#fed7aa;padding:10px;border-radius:8px;font-size:13px}
+.banner{background:#fff7ed;border:1px solid var(--orange);color:#9a3412;padding:10px;border-radius:8px;font-size:13px}
 .hidden{display:none!important}
 .result .headline{font-size:17px;font-weight:600;margin-bottom:8px;color:var(--cyan)}
 .cards{display:flex;gap:8px}
-.card{flex:1;background:#161b22;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.card{flex:1;background:var(--chip);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
 .card .k{font-size:12px;color:var(--mut);display:flex;align-items:center;gap:6px}
 .card .v{font-size:20px;font-weight:600}
 .card .s{font-size:12px}
 .card.short .s{color:var(--orange)}.card.fayy .s{color:var(--cyan)}
 .sw{display:inline-block;width:18px;height:0;border-top:3px solid var(--cyan)}
 .sw.dash{border-top:3px dashed var(--orange)}
-.wait{margin-top:8px;font-size:12px;color:#a7f3d0}
+.wait{margin-top:8px;font-size:12px;color:#047857}
 .dose #doseOut{font-size:13px}
 .lang{display:flex;gap:4px}
 .lang button{border:1px solid var(--line);background:transparent;color:var(--mut);border-radius:6px;padding:2px 8px;cursor:pointer;font:inherit;font-size:12px}
@@ -40,4 +40,4 @@ input[type=range]{flex:1;accent-color:var(--cyan)}
 footer{font-size:11px;color:var(--mut);border-top:1px solid var(--line);padding-top:8px;margin-top:10px}
 [dir=rtl] #panel{direction:rtl;text-align:right}
 @media (max-width:700px){#panel{top:auto;left:8px;right:8px;width:auto;height:52%}}
-.nogl{position:absolute;top:40%;left:380px;right:40px;color:#fed7aa;font-size:16px}
+.nogl{position:absolute;top:40%;left:380px;right:40px;color:#9a3412;font-size:16px}

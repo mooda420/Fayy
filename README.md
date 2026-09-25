@@ -1,6 +1,6 @@
 # Fayy · فيء
 
-**Shade-aware routes for Abu Dhabi delivery riders and pedestrians, on Al Reem and Al Maryah Island.** Pick A → B, a time and a mode; Fayy computes where every building's shadow falls at that minute and shows the shortest route next to the shadiest one (e.g. by motorcycle from The Bridges to Reem Central Park at 08:00: "Fayy: +0.3 min, 35% less direct sun").
+**Shade-aware routes for Abu Dhabi delivery riders and pedestrians, on Al Reem and Al Maryah Island.** Pick A → B, a time and a mode; Fayy computes where every building's shadow falls at that minute and shows the shortest route next to the shadiest one (e.g. by motorcycle from Gate Towers to north Reem at 08:00, 2.9 km: "Fayy: +0.2 min, 40% less direct sun").
 
 *Fayy (فيء) is Arabic for the shade that returns after the sun passes its peak.* Built at Fish Tank Abu Dhabi.
 
