@@ -8,12 +8,12 @@ INTERIM = ROOT / "data" / "interim"
 OVERRIDES = ROOT / "data" / "overrides" / "heights_override.csv"
 OUT = ROOT / "docs" / "data"
 
-# west, south, east, north (Dubai Marina + Marina Walk + JBR)
-BBOX = (55.128, 25.068, 55.152, 25.095)
+# west, south, east, north (Al Reem Island, Abu Dhabi: Shams, City of Lights, Najmat, Tamouh)
+BBOX = (54.390, 24.480, 54.425, 24.510)
 CENTER_LON = (BBOX[0] + BBOX[2]) / 2
 CENTER_LAT = (BBOX[1] + BBOX[3]) / 2
 
-TZ = "Asia/Dubai"
+TZ = "Asia/Dubai"  # UAE-wide zone, UTC+4 (also Abu Dhabi)
 METRIC_CRS = "EPSG:32640"  # UTM 40N
 
 DATE_PRESETS = {

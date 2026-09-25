@@ -1,25 +1,25 @@
 /* Fayy — shade-aware routing, fully client-side. */
 const D = "data/";
 const PRESETS = [
-  { name: "Marina Walk restaurant → JBR The Walk", a: [55.1445, 25.0834], b: [55.1361, 25.0763] },
-  { name: "Dubai Marina Mall → Marina tower (Marina 101)", a: [55.1402, 25.0747], b: [55.1489, 25.0899] },
-  { name: "Princess Tower → JBR The Walk", a: [55.1485, 25.0866], b: [55.1377, 25.0793] },
+  { name: "City of Lights (Addax Tower) → Shams Boulevard", a: [54.4053, 24.4993], b: [54.4113, 24.4974] },
+  { name: "Sun & Sky Towers → Sorbonne University Abu Dhabi", a: [54.4063, 24.4974], b: [54.4103, 24.4902] },
+  { name: "Bilshu'oum St → Qirtas St (north Reem)", a: [54.4115, 24.5076], b: [54.4052, 24.5076] },
 ];
 const I18N = {
   en: {},
-  ar: { tagline: "الظل الذي يعود. مسارات مظللة في دبي مارينا وJBR.", mode: "الوضع", moto: "دراجة نارية", walk: "مشي", date: "التاريخ",
+  ar: { tagline: "الظل الذي يعود. مسارات مظللة في جزيرة الريم، أبوظبي.", mode: "الوضع", moto: "دراجة نارية", walk: "مشي", date: "التاريخ",
     time: "الوقت", pref: "تفضيل الظل", fastest: "الأسرع", balanced: "متوازن", maxshade: "أقصى ظل", trips: "رحلات تجريبية",
     hint: "أو انقر على الخريطة لتحديد A ثم B.", shortest: "الأقصر", dose: "جرعة الحرارة: وردية من 10 توصيلات",
     banner: "لا يوجد ظل تقريبًا الآن: لهذا يوجد حظر العمل في الخارج وقت الظهيرة (12:30–15:00، 15 يونيو–15 سبتمبر).",
     wait: "◆ أماكن انتظار مظللة قرب B" },
-  ur: { tagline: "واپس آنے والا سایہ۔ دبئی مرینا اور JBR کے لیے سایہ دار راستے۔", mode: "طریقہ", moto: "موٹر سائیکل", walk: "پیدل", date: "تاریخ",
+  ur: { tagline: "واپس آنے والا سایہ۔ جزیرہ الریم، ابوظہبی کے لیے سایہ دار راستے۔", mode: "طریقہ", moto: "موٹر سائیکل", walk: "پیدل", date: "تاریخ",
     time: "وقت", pref: "سایہ کی ترجیح", fastest: "تیز ترین", balanced: "متوازن", maxshade: "زیادہ سایہ", trips: "ڈیمو سفر",
     hint: "یا نقشے پر کلک کر کے A پھر B منتخب کریں۔", shortest: "مختصر ترین", dose: "حرارت کی خوراک: 10 ڈیلیوریز کی شفٹ",
     banner: "اس وقت تقریباً کوئی سایہ نہیں: اسی لیے دوپہر میں باہر کام پر پابندی ہے (12:30–15:00، 15 جون–15 ستمبر)۔",
     wait: "◆ B کے قریب سایہ دار انتظار کی جگہیں" },
 };
 
-const S = { mode: "moto", date: 0, slot: 20, k: 3, A: null, B: null, lang: "en", playing: null };
+const S = { mode: "moto", date: 0, slot: 22, k: 3, A: null, B: null, lang: "en", playing: null };
 let meta, stats, graphs = {}, shadowCache = {}, map;
 
 const $ = (id) => document.getElementById(id);
@@ -104,7 +104,7 @@ function initMap() {
 function makeMap() {
   return new maplibregl.Map({
     container: "map", style: "https://tiles.openfreemap.org/styles/dark",
-    center: [55.1395, 25.0815], zoom: 14.6, pitch: 55, bearing: -30, antialias: true,
+    center: [54.4065, 24.4965], zoom: 14.8, pitch: 55, bearing: -30, antialias: true,
     attributionControl: { customAttribution: "Map data © OpenStreetMap contributors, Overture Maps Foundation" },
   });
 }

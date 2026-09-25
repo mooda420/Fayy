@@ -1,5 +1,6 @@
 """Download buildings (Overture, OSM fallback) and street graphs (OSM via osmnx)."""
 import csv
+import os
 import json
 import subprocess
 import sys
@@ -14,6 +15,10 @@ from config import (BBOX, DEFAULT_HEIGHT_M, FLOOR_HEIGHT_M, INTERIM, METRIC_CRS,
 
 ox.settings.use_cache = True
 ox.settings.cache_folder = str(RAW / "osmnx_cache")
+ox.settings.requests_timeout = 90
+if os.environ.get("OVERPASS_URL"):  # e.g. https://maps.mail.ru/osm/tools/overpass/api
+    ox.settings.overpass_url = os.environ["OVERPASS_URL"]
+    ox.settings.overpass_rate_limit = False
 
 
 def _num(v):
