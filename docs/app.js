@@ -256,8 +256,12 @@ async function renderShift() {
   $("shiftTrade").textContent = `Sun minutes avoided per extra km: ${dKm > 0.0005 ? (saved / dKm).toFixed(1) : "∞ – no extra distance"}`;
   const fuelL = Math.max(0, dKm) * FUEL_L_PER_100KM / 100;
   $("shiftFuel").textContent = `Extra fuel cost (estimate): ${fuelL.toFixed(2)} L ≈ AED ${(fuelL * FUEL_PRICE_AED_PER_L).toFixed(2)} this shift, at ${FUEL_L_PER_100KM} L/100 km and AED ${FUEL_PRICE_AED_PER_L}/L.`;
-  $("shiftRows").innerHTML = `<thead><tr><th>#</th><th>Time</th><th>km S / F</th><th>min S / F</th><th>sun S / F</th></tr></thead><tbody>`
-    + rows.map((x, i) => `<tr data-i="${i}" title="${x.r[0]} → ${x.tw[0]}"><td>${i + 1}</td><td>${fmtSlot(x.d.slot)}</td><td>${x.sk.toFixed(1)} / ${x.fk.toFixed(1)}</td><td>${x.st.toFixed(1)} / ${x.ft.toFixed(1)}</td><td><span class="s">${x.s.toFixed(1)}</span> / <span class="f">${x.f.toFixed(1)}</span></td></tr>`).join("") + "</tbody>";
+  $("shiftRows").innerHTML = `<thead><tr><th>#</th><th>Leaves</th><th>Minutes in sun<br><span class="s">Shortest</span> → <span class="f">Fayy</span></th><th>Sun saved</th><th>Fayy detour</th></tr></thead><tbody>`
+    + rows.map((x, i) => {
+      const sv = x.s - x.f, dk = x.fk - x.sk, dm = x.ft - x.st;
+      const det = Math.abs(dk) < 0.05 && Math.abs(dm) < 0.05 ? "none" : `${sg(dk)} km, ${sg(dm)} min`;
+      return `<tr data-i="${i}" title="${x.r[0]} → ${x.tw[0]}: shortest ${x.sk.toFixed(1)} km / ${x.st.toFixed(1)} min, Fayy ${x.fk.toFixed(1)} km / ${x.ft.toFixed(1)} min"><td>${i + 1}</td><td>${fmtSlot(x.d.slot)}</td><td><span class="s">${x.s.toFixed(1)}</span> → <span class="f">${x.f.toFixed(1)}</span></td><td class="${sv >= 0.05 ? "win" : "muted"}">${sv >= 0.05 ? `−${sv.toFixed(1)} min` : x.s < 0.05 ? "sun down" : "same"}</td><td class="muted">${det}</td></tr>`;
+    }).join("") + "</tbody>";
   const W = 300, H = 150, L = 22, B = 18, T = 8, max = Math.max(1, ...rows.map((x) => x.s));
   const gw = (W - L - 4) / rows.length, bw = gw * 0.38, y = (v) => H - B - (v / max) * (H - B - T);
   let svg = "";

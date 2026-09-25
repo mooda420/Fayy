@@ -62,3 +62,5 @@ footer{font-size:11px;color:var(--mut);border-top:1px solid var(--line);padding-
 .stbl .s{color:var(--orange)}.stbl .f{color:var(--cyan)}
 .stbl.rows td{font-size:11px}.stbl.rows tbody tr{cursor:pointer}.stbl.rows tbody tr:hover{background:var(--chip)}
 .trade{background:#ecfeff;border:1px solid #a5f3fc;color:#0e7490;border-radius:8px;padding:6px 10px;font-size:13px;font-weight:600;margin:6px 0}
+.stbl td.win{color:var(--cyan);font-weight:700}.stbl th br+span,.stbl th span{font-weight:600}
+.legend{display:flex;gap:12px;margin:2px 0 0}.legend .sq{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}.legend .sq.s{background:#ea580c}.legend .sq.f{background:#0891b2}

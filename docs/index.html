@@ -94,9 +94,11 @@
     <div class="muted small" id="shiftFuel"></div>
     <label class="mt">Sun minutes per delivery</label>
     <svg id="shiftChart" class="chart" viewBox="0 0 300 150"></svg>
+    <div class="legend small"><span><i class="sq s"></i>Shortest route</span><span><i class="sq f"></i>Fayy shade route</span></div>
     <p class="hint">Click a bar or a row to show that delivery on the map.</p>
     <details class="depart">
       <summary>Deliveries</summary>
+      <p class="muted small">Each row is one delivery. "Minutes in sun" is time the rider spends in direct sunlight on each route; "Sun saved" is what Fayy avoids; "Fayy detour" is the extra distance and time it costs.</p>
       <table class="stbl rows" id="shiftRows"></table>
     </details>
   </div>
