@@ -130,7 +130,7 @@ function setupMap() {
     map.addLayer({ id: "pts-l", type: "symbol", source: "pts", layout: { "text-field": ["get", "l"], "text-size": 12, "text-font": ["Noto Sans Bold"], "text-allow-overlap": true }, paint: { "text-color": "#000" } });
     map.on("click", onMapClick);
     await refresh();
-    runPreset(0);
+    runPreset(1);
   });
 }
 
