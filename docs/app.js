@@ -219,6 +219,7 @@ async function route() {
   $("result").classList.remove("hidden");
   showWaitingSpots(dst, si);
   heatDose(g);
+  bestDeparture(g, src, dst);
 }
 
 /* ---------- tabs: rider shift + shade planner ---------- */
@@ -305,6 +306,36 @@ function showHeat() {
   if (!heatNow || S.saved == null) { el.classList.add("hidden"); return; }
   el.textContent = `🌡 Now ${Math.round(heatNow.temperature_2m)}°C, feels like ${Math.round(heatNow.apparent_temperature)}°C. Fayy saves ${(S.saved / 60).toFixed(1)} min in direct sun.`;
   el.classList.remove("hidden");
+}
+
+/* Best departure time: Fayy and shortest sun minutes for this trip across every slot of the day. */
+function bestDeparture(g, src, dst) {
+  const n = meta.slots.length, base = S.date * n, pts = [];
+  for (let j = 0; j < n; j++) {
+    const si = base + j, up = meta.index[si].alt > 2;
+    const f = up ? dijkstra(g, src, dst, S.k, si) : null, s = up ? dijkstra(g, src, dst, 0, si) : null;
+    pts.push({ j, f: f ? f.sun / 60 : 0, s: s ? s.sun / 60 : 0 });
+  }
+  const W = 300, H = 110, L = 22, B = 16, T = 8, max = Math.max(0.5, ...pts.map((p) => p.s));
+  const x = (j) => L + (j / (n - 1)) * (W - L - 6), y = (v) => H - B - (v / max) * (H - B - T);
+  const path = (k) => pts.map((p, i) => `${i ? "L" : "M"}${x(p.j).toFixed(1)},${y(p[k]).toFixed(1)}`).join("");
+  let svg = `<rect x="${x(S.slot) - 4}" y="${T}" width="8" height="${H - B - T}" fill="#0891b2" opacity=".12"/>`;
+  const step = max > 4 ? 2 : max > 2 ? 1 : 0.5;
+  for (let v = 0; v <= max + 1e-9; v += step) svg += `<line x1="${L}" x2="${W - 4}" y1="${y(v)}" y2="${y(v)}" stroke="#e2e8f0"/><text x="${L - 3}" y="${y(v) + 3}" text-anchor="end">${v}</text>`;
+  for (let j = 0; j < n; j += 4) svg += `<text x="${x(j)}" y="${H - 4}" text-anchor="middle">${fmtSlot(meta.slots[j])}</text>`;
+  svg += `<path d="${path("s")}" fill="none" stroke="#ea580c" stroke-width="1.5" stroke-dasharray="3 2"/><path d="${path("f")}" fill="none" stroke="#0891b2" stroke-width="2"/>`;
+  svg += `<circle cx="${x(S.slot)}" cy="${y(pts[S.slot].f)}" r="3" fill="#0891b2"/>`;
+  const now = pts[S.slot].f;
+  let best = null;
+  for (let j = S.slot + 1; j <= Math.min(n - 1, S.slot + 3); j++) if (!best || pts[j].f < best.f) best = pts[j];
+  let hint = "";
+  if (best && now >= 0.2 && best.f <= now * 0.85) {
+    hint = `⏱ Leave at ${fmtSlot(meta.slots[best.j])} for ${Math.round(100 * (1 - best.f / now))}% less sun.`;
+    svg += `<circle cx="${x(best.j)}" cy="${y(best.f)}" r="4" fill="#10b981" stroke="#fff"/>`;
+  }
+  $("departChart").innerHTML = svg;
+  $("departHint").textContent = hint;
+  $("departHint").classList.toggle("hidden", !hint);
 }
 
 /* Rider waiting spots: 3 nearest shaded street points within 150 m of B. */

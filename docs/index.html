@@ -70,6 +70,12 @@
       <div class="card short"><div class="k"><i class="sw dash"></i><span data-i18n="shortest">Shortest</span></div><div class="v" id="sTime"></div><div class="s" id="sSun"></div></div>
       <div class="card fayy"><div class="k"><i class="sw"></i>Fayy</div><div class="v" id="fTime"></div><div class="s" id="fSun"></div></div>
     </div>
+    <details class="depart" id="depart" open>
+      <summary data-i18n="departTitle">Best departure time</summary>
+      <svg id="departChart" class="chart" viewBox="0 0 300 110"></svg>
+      <div class="muted small legend"><i class="sw dash"></i> shortest <i class="sw"></i> Fayy · sun minutes by departure time</div>
+      <div class="depart-hint hidden" id="departHint"></div>
+    </details>
     <div class="wait hidden" id="waitNote" data-i18n="wait">◆ Shaded waiting spots near B (wait here for pickup)</div>
   </section>
 
