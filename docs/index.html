@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fayy · فيء — shade-aware routes for Dubai riders</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="map"></div>
+<aside id="panel">
+  <header>
+    <h1>Fayy <span class="ar">فيء</span></h1>
+    <p class="tag" data-i18n="tagline">The shade that returns. Shade-aware routes for Dubai Marina + JBR.</p>
+    <div class="lang" id="lang">
+      <button data-lang="en" class="on">EN</button><button data-lang="ar">العربية</button><button data-lang="ur">اردو</button>
+    </div>
+  </header>
+
+  <section>
+    <label data-i18n="mode">Mode</label>
+    <div class="seg" id="mode">
+      <button data-v="moto" class="on">🏍️ <span data-i18n="moto">Motorcycle</span></button>
+      <button data-v="walk">🚶 <span data-i18n="walk">Walk</span></button>
+    </div>
+  </section>
+
+  <section>
+    <label data-i18n="date">Date</label>
+    <div class="seg" id="date"></div>
+  </section>
+
+  <section>
+    <label><span data-i18n="time">Time</span> <b id="timeLabel">--:--</b> <span id="sunLabel" class="muted"></span></label>
+    <div class="row">
+      <button id="play" class="play" title="Play the day">▶</button>
+      <input type="range" id="slider" min="0" max="25" step="1" value="8">
+    </div>
+  </section>
+
+  <section>
+    <label data-i18n="pref">Shade preference</label>
+    <div class="seg" id="pref">
+      <button data-v="0" data-i18n="fastest">Fastest</button>
+      <button data-v="3" class="on" data-i18n="balanced">Balanced</button>
+      <button data-v="8" data-i18n="maxshade">Max shade</button>
+    </div>
+  </section>
+
+  <section>
+    <label data-i18n="trips">Demo trips</label>
+    <div id="presets" class="presets"></div>
+    <p class="hint" id="hint" data-i18n="hint">Or click the map to set A, then B.</p>
+  </section>
+
+  <div id="banner" class="banner hidden" data-i18n="banner">Almost no shade exists right now: this is why the midday outdoor-work ban exists (12:30–15:00, 15 Jun–15 Sep).</div>
+
+  <section id="result" class="result hidden">
+    <div class="headline" id="headline"></div>
+    <div class="cards">
+      <div class="card short"><div class="k"><i class="sw dash"></i><span data-i18n="shortest">Shortest</span></div><div class="v" id="sTime"></div><div class="s" id="sSun"></div></div>
+      <div class="card fayy"><div class="k"><i class="sw"></i>Fayy</div><div class="v" id="fTime"></div><div class="s" id="fSun"></div></div>
+    </div>
+    <div class="wait hidden" id="waitNote" data-i18n="wait">◆ Shaded waiting spots near B (wait here for pickup)</div>
+  </section>
+
+  <section id="dose" class="dose">
+    <label data-i18n="dose">Heat dose: sample 10-delivery shift</label>
+    <div id="doseOut" class="muted">—</div>
+  </section>
+
+  <footer>
+    <div>Map data © OpenStreetMap contributors, Overture Maps Foundation · Tiles © OpenFreeMap</div>
+    <div id="stats" class="muted"></div>
+  </footer>
+</aside>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

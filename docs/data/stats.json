@@ -1,0 +1,13 @@
+{
+ "source": "overture",
+ "buildings": 1048,
+ "with_height": 220,
+ "from_floors": 83,
+ "from_override": 13,
+ "defaulted": 732,
+ "real_pct": 30.2,
+ "moto_edges": 619,
+ "walk_edges": 7292,
+ "moto_edges_export": 619,
+ "walk_edges_export": 3641
+}

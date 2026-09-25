@@ -1,0 +1,9 @@
+overturemaps
+osmnx>=2.0
+networkx
+shapely>=2.0
+geopandas
+pyproj
+pvlib
+numpy
+pytest
